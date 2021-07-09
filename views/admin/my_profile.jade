@@ -1,0 +1,187 @@
+extends layout
+
+block content
+    div(class='row')
+        div(class='col-12 col-md-6 offset-md-3')
+            div(id='form')
+                div(class='w2ui-page page-0')
+                    div(class='w2ui-field w2ui-span2')
+                        label 아이디
+                        div
+                            input(name='id', readonly)
+
+                    div(class='w2ui-field w2ui-span2')
+                        label 패스워드
+                        div
+                            input(name='pass1', type='password', placeholder='변경시에만 입력')
+
+                    div(class='w2ui-field w2ui-span2')
+                        label 이름
+                        div
+                            input(name='name1')
+                            
+                    div(class='w2ui-field w2ui-span2 mt-4')
+                        label 이미지
+                        div(class='d-flex flex-wrap img-thumbnail file_fields', style='min-height: 80px;', onDragEnter='dragEnter(event)', onDragLeave='dragLeave(event)', onDragOver='dragOver(event)', onDrop='drop(event)')
+
+
+                div(class='w2ui-buttons')
+                    button(class='w2ui-btn w2ui-btn-blue' name='save' id='save') 입력
+
+
+
+
+
+
+
+
+
+
+    //- 들여쓰기 중요함
+    script.
+        let fileLimitCount = 1;
+        var table = 'MEMB_tbl';
+        var config = {
+            form: {
+                name: 'form',
+                url: {
+                    get: '/crud/view?table=' + table,
+                },
+                fields: [
+                    { name: 'id', type: 'text', required: true },	//세팅 해줘야함
+                    { name: 'pass1', type: 'password', },	//세팅 해줘야함
+                    { name: 'name1', type: 'text', required: true },	//세팅 해줘야함
+                ],
+                record: { 
+                    id: '!{ row.id }',
+                    name1: '!{ row.name1 }',
+                },
+                actions: {
+                    save: function () {
+                        var errors = this.validate();
+                        if (errors.length > 0) {
+                            return;
+                        }
+
+                        //필수값
+                        this.record.idx = "#{ row.idx }";
+                        this.record.table = table;
+                        //
+                        
+                        if (this.record.pass1 == '') {
+                            delete this.record.pass1;
+                        }
+                        
+                        var formData = new FormData();
+                        var self = this;
+                        for (var key in this.record) {
+                            formData.append(key, self.record[key]);
+                        }
+                        
+                        
+                        axios.post('/crud/write', formData).then(function(res) {
+                            console.dir(res.data);
+                            w2alert(res.data.msg).done(function() {
+                                location.reload();
+                            });
+                            
+                        });
+                    }
+                },
+                onError: function(e) {
+                    console.log(e.xhr.responseText);
+                },
+            }
+        };
+        $(function () {
+            $('#form').w2form(config.form);
+            
+            if ("!{ row.filename0 }" != '') {
+                $(".file_fields").html('');
+                var fileLink = "!{ row.filename0 }";
+                var html = createHtml(fileLink);
+                $(".file_fields").append(html);
+            }
+        });
+        function formClear() {
+            console.log("formClear");
+            w2ui.form.clear();
+        	w2ui.form.record.filename0 = '';
+        	$(".file_box").remove();
+        	w2ui.form.refresh();
+            w2ui.form.resize();
+        }
+        function dragEnter(e) {
+            console.log("드래그 요소가 들어왔을떄", e);
+            $(".file_fields").addClass("bg-dark");
+        }
+        function dragLeave(i, e) {
+            console.log(i, "드래그 요소가 나갔을때");
+            $(".file_fields").removeClass("bg-dark");
+        }
+        function dragOver(e) {
+        	e.stopPropagation();
+            e.preventDefault();
+        }
+        function drop(e) {
+            console.log("드래그한 항목을 떨어뜨렸을때", e.dataTransfer.files);
+            e.preventDefault();
+            
+            var size = $('.file_box').length + e.dataTransfer.files.length;
+            
+            if (size > fileLimitCount) {
+                w2alert('파일은 ' + fileLimitCount + '개 까지 등록 가능합니다.');
+                $(".file_fields").removeClass("bg-dark");
+                return;
+            }
+            
+            for (file of e.dataTransfer.files) {
+                var formData = new FormData();
+                formData.append("upload_file", file, file.name);
+            	axios.post("http://images.lazulsoft.com/file_upload", formData).then(function(res) {
+            		console.dir(res.data);
+                    setTimeout(function() {
+                        var i = $('.file_box').length;                
+                        eval("w2ui.form.record.filename"+i+"='"+res.data.url+"';");
+                        var html = createHtml(res.data.url);
+                        $(".file_fields").append(html);
+                        $(".file_fields").removeClass("bg-dark");
+                        w2ui.form.resize();
+                    }, 100);
+                }).catch(function(err){
+                    console.log(err);
+                });
+            }
+        }
+        function deleteImage(obj) {
+            var i = $('.X').index(obj);
+            console.log(i);
+            $(".file_box").eq(i).remove();
+                        
+            //초기화
+            eval("w2ui.form.record.filename0='';");
+            
+            //파일 재정렬
+            $('.file_box').each(function(i) {
+                var src = $('.file_image').eq(i).attr('src');
+                eval("w2ui.form.record.filename"+i+"='"+src+"';");
+            });
+            //
+        }
+        function createHtml(url) {
+            var tmp = url.split('.');
+            var mimeType = tmp[tmp.length - 1];
+            
+            var html = `<div class='file_box p-0 mt-2 me-2', style='position: relative; width: 70px; height: 70px;'>`;
+            if ('jpg|jpeg|png|gif'.includes(mimeType)) {
+                html += `<img src='` + url + `' onclick=window.open('` + url + `') class='file_image img-thumbnail' style='width: 70px; height: 70px;' />`;
+            } else {
+                tmp = url.split('/');
+                var filename = tmp[tmp.length - 1];
+                html += `<div onclick=window.open('` + url + `') class='file_image img-thumbnail d-flex flex-wrap align-items-center' style='width: 70px; height: 70px;'><div>` + filename + ` </div></div>`;
+            }
+            html += `    <img src='/images/photo_x.png' onclick='deleteImage(this);' class='X', style='position: absolute; cursor: pointer; top: -10px; right: -9px; width: 25px; height: 25px;' />`;
+            html += `</div>`;
+            
+            return html;
+        }
