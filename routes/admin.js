@@ -13,7 +13,7 @@ global.CURRENT_URL;
 
 function userChecking(req, res, next) {
     // if (process.env.NODE_ENV != 'development') {
-        if (req.session.id == null) {
+        if (req.session.mid == null) {
             res.redirect('/admin/login');
             return;
         }
@@ -86,7 +86,7 @@ router.post('/login', function(req, res, next) {
 
 
                 req.session.idx = rows[0].idx;
-                req.session.usr_id = rows[0].id;
+                req.session.mid = rows[0].id;
                 req.session.name1 = rows[0].name1;
                 req.session.level1 = rows[0].level1;
 
