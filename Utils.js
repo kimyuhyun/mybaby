@@ -6,7 +6,7 @@ class Utils {
         var self = this;
         return new Promise(function(resolve, reject) {
             if (req.query.name1 != null) {
-                db.query('SELECT * FROM SAVE_MENU_tbl WHERE link = ? AND id = ?', [CURRENT_URL, req.session.usr_id], function(err, rows, fields) {
+                db.query('SELECT * FROM SAVE_MENU_tbl WHERE link = ? AND id = ?', [CURRENT_URL, req.session.mid], function(err, rows, fields) {
                     if (!err) {
                         if (rows.length == 0) {
                             var sql = `
@@ -14,7 +14,7 @@ class Utils {
                                 id = ?,
                                 name1 = ?,
                                 link = ? `;
-                            db.query(sql, [req.session.usr_id, req.query.name1, CURRENT_URL], function(err, rows, fields) {
+                            db.query(sql, [req.session.mid, req.query.name1, CURRENT_URL], function(err, rows, fields) {
                                 self.getSaveMenu(req).then(function(data) {
                                     resolve(data);
                                 });
@@ -39,8 +39,8 @@ class Utils {
 
     getSaveMenu(req) {
         return new Promise(function(resolve, reject) {
-            if (req.session.usr_id != null) {
-                db.query("SELECT * FROM SAVE_MENU_tbl WHERE id = ?", req.session.usr_id, function(err, rows, fields) {
+            if (req.session.mid != null) {
+                db.query("SELECT * FROM SAVE_MENU_tbl WHERE id = ?", req.session.mid, function(err, rows, fields) {
                     if (!err) {
                         resolve(rows);
                     } else {
