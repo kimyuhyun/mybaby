@@ -6,6 +6,7 @@ const db = require('../db');
 const utils = require('../Utils');
 const moment = require('moment');
 
+
 async function setLog(req, res, next) {
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var rows;
@@ -46,49 +47,25 @@ async function setLog(req, res, next) {
 }
 
 
-router.get('/get_gbn/:id', setLog, async function(req, res, next) {
-    const id = req.params.id;
+
+router.get('/get_baby/:pid', setLog, async function(req, res, next) {
+    const pid = req.params.pid;
     var arr = [];
-    var cnt  = 0;
-
-    //메뉴 있는지 확인
-    await new Promise(function(resolve, reject) {
-        const sql = `SELECT COUNT(*) as cnt FROM GBN_tbl WHERE id = ?`;
-        db.query(sql, id, function(err, rows, fields) {
-            if (!err) {
-                resolve(rows[0].cnt);
-            } else {
-                console.log(err);
-            }
-        });
-    }).then(function(data) {
-        cnt = data;
-    });
-    //
-
-    if (cnt == 0) {
-        //카테고리 넣어주기!!
-        var gbns = ["pmilk","bmilk","babyfood","diaper","sleep","bath","hosp","temp","drug","snack","water","milk","play","etc"];
-        for (var i in gbns) {
-            await new Promise(function(resolve, reject) {
-                sql = 'INSERT INTO GBN_tbl SET id = ?, gbn = ?, sort1 = ?';
-                db.query(sql, [id, gbns[i], i], function(err, rows, fields) {
-                    if (!err) {
-                        resolve();
-                    } else {
-                        console.log(err);
-                        res.send(err);
-                        return;
-                    }
-                });
-            }).then();
-        }
-        //
-    }
 
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT idx, gbn FROM GBN_tbl WHERE id = ? ORDER BY sort1 ASC`;
-        db.query(sql, id, function(err, rows, fields) {
+        const sql = `
+            SELECT
+            A.idx,
+            A.filename0,
+            A.is_default,
+            A.p_is_default,
+            A.name1,
+            A.birth,
+            A.due_birth,
+            (SELECT COUNT(*) FROM MEMB_tbl WHERE pid = A.pid) as parent_cnt
+            FROM BABY_tbl as A
+            WHERE A.pid = ? ORDER BY A.modified DESC`;
+        db.query(sql, pid, function(err, rows, fields) {
             // console.log(rows);
             if (!err) {
                 resolve(rows);
@@ -102,15 +79,16 @@ router.get('/get_gbn/:id', setLog, async function(req, res, next) {
     res.send(arr);
 });
 
-router.post('/set_qmemo', setLog, async function(req, res, next) {
-    const { id, memo } = req.body;
 
-    var cnt = 0;
-    var obj = {};
+router.get('/get_baby_detail/:idx', setLog, async function(req, res, next) {
+    const idx = req.params.idx;
+
+    var arr = {};
 
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT COUNT(*) as cnt FROM QMEMO_tbl WHERE id = ?`;
-        db.query(sql, id, function(err, rows, fields) {
+        const sql = `SELECT * FROM BABY_tbl WHERE idx = ?`;
+        db.query(sql, idx, function(err, rows, fields) {
+            // console.log(rows);
             if (!err) {
                 resolve(rows[0]);
             } else {
@@ -118,17 +96,43 @@ router.post('/set_qmemo', setLog, async function(req, res, next) {
             }
         });
     }).then(function(data) {
-        cnt = data.cnt;
+        arr = utils.nvl(data);
     });
 
+    res.send(arr);
+});
+
+router.get('/set_baby_default/:idx/:pid/:is_parent', setLog, async function(req, res, next) {
+    const idx = req.params.idx;
+    const pid = req.params.pid;
+    const is_parent = req.params.is_parent;
+    var sql = '';
+
+    //디폴트값 초기화
     await new Promise(function(resolve, reject) {
-        var sql = '';
-        if (cnt == 0) {
-            sql = `INSERT INTO QMEMO_tbl SET memo = ?, id = ?`;
+        if (is_parent == '1') {
+            sql = `UPDATE BABY_tbl SET p_is_default = 0 WHERE pid = ?`;
         } else {
-            sql = `UPDATE QMEMO_tbl SET memo = ? WHERE id = ?`;
+            sql = `UPDATE BABY_tbl SET is_default = 0 WHERE pid = ?`;
         }
-        db.query(sql, [memo, id], function(err, rows, fields) {
+        db.query(sql, pid, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then();
+    //
+
+    await new Promise(function(resolve, reject) {
+        if (is_parent == '1') {
+            sql = `UPDATE BABY_tbl SET p_is_default = 1, modified = NOW() WHERE idx = ?`;
+        } else {
+            sql = `UPDATE BABY_tbl SET is_default = 1, modified = NOW() WHERE idx = ?`;
+        }
+
+        db.query(sql, idx, function(err, rows, fields) {
             if (!err) {
                 resolve(rows);
             } else {
@@ -136,29 +140,10 @@ router.post('/set_qmemo', setLog, async function(req, res, next) {
             }
         });
     }).then(function(data) {
-        obj = utils.nvl(data);
+        arr = utils.nvl(data);
     });
-    res.send(obj);
+    res.send(arr);
 });
-
-router.get('/get_qmemo/:id', setLog, async function(req, res, next) {
-    const id = req.params.id;
-    var obj = {};
-    await new Promise(function(resolve, reject) {
-        const sql = `SELECT memo FROM QMEMO_tbl WHERE id = ?`;
-        db.query(sql, id, function(err, rows, fields) {
-            if (!err) {
-                resolve(rows[0]);
-            } else {
-                console.log(err);
-            }
-        });
-    }).then(function(data) {
-        obj = utils.nvl(data);
-    });
-    res.send(obj);
-});
-
 
 
 

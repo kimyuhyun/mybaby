@@ -6,6 +6,7 @@ const db = require('../db');
 const utils = require('../Utils');
 const moment = require('moment');
 
+
 async function setLog(req, res, next) {
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var rows;
@@ -46,52 +47,117 @@ async function setLog(req, res, next) {
 }
 
 
-router.get('/get_gbn/:id', setLog, async function(req, res, next) {
-    const id = req.params.id;
-    var arr = [];
-    var cnt  = 0;
+router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
+    const baby_idx = req.params.baby_idx;
+    var end = '';
+    var start = '';
 
-    //메뉴 있는지 확인
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT COUNT(*) as cnt FROM GBN_tbl WHERE id = ?`;
-        db.query(sql, id, function(err, rows, fields) {
+        const sql = `
+            SELECT sdate FROM DATA_tbl WHERE baby_idx = ? ORDER BY sdate DESC`;
+        db.query(sql, baby_idx, function(err, rows, fields) {
             if (!err) {
-                resolve(rows[0].cnt);
+                resolve(rows[0]);
             } else {
                 console.log(err);
             }
         });
     }).then(function(data) {
-        cnt = data;
+        end = data.sdate;
+        start = moment(end).subtract(5, 'days').format('YYYY-MM-DD');
     });
-    //
 
-    if (cnt == 0) {
-        //카테고리 넣어주기!!
-        var gbns = ["pmilk","bmilk","babyfood","diaper","sleep","bath","hosp","temp","drug","snack","water","milk","play","etc"];
-        for (var i in gbns) {
-            await new Promise(function(resolve, reject) {
-                sql = 'INSERT INTO GBN_tbl SET id = ?, gbn = ?, sort1 = ?';
-                db.query(sql, [id, gbns[i], i], function(err, rows, fields) {
-                    if (!err) {
-                        resolve();
-                    } else {
-                        console.log(err);
-                        res.send(err);
-                        return;
-                    }
-                });
-            }).then();
-        }
-        //
-    }
+    var arr = {};
 
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT idx, gbn FROM GBN_tbl WHERE id = ? ORDER BY sort1 ASC`;
-        db.query(sql, id, function(err, rows, fields) {
-            // console.log(rows);
+        const sql = `
+            SELECT sdate, SUM(ml) as ml FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? GROUP BY sdate ORDER BY sdate DESC`;
+        db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
             if (!err) {
                 resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        arr.header = utils.nvl(data);
+    });
+
+    await new Promise(function(resolve, reject) {
+        const sql = `
+            SELECT
+            A.idx,
+            A.gbn,
+            A.sdate,
+            A.stm,
+            A.edate,
+            A.etm,
+            A.memo,
+            A.ml,
+            A.val
+            FROM
+            DATA_tbl as A
+            WHERE A.baby_idx = ?
+            AND sdate BETWEEN ? AND ?
+            ORDER BY sdate DESC, stm DESC`;
+        db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        arr.body = utils.nvl(data);
+    });
+
+    res.send(arr);
+});
+
+router.get('/get_data_last_one/:baby_idx', setLog, async function(req, res, next) {
+    const baby_idx = req.params.baby_idx;
+
+    var obj = {};
+
+    await new Promise(function(resolve, reject) {
+        const sql = `
+            SELECT
+            A.idx,
+            A.gbn,
+            A.sdate,
+            A.stm,
+            A.edate,
+            A.etm,
+            A.memo,
+            A.ml,
+            A.val
+            FROM
+            DATA_tbl as A
+            WHERE A.baby_idx = ?
+            ORDER BY idx DESC
+            LIMIT 0, 1`;
+        db.query(sql, baby_idx, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows[0]);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        obj = utils.nvl(data);
+    });
+
+    res.send(obj);
+});
+
+router.get('/get_data_detail/:idx', setLog, async function(req, res, next) {
+    const idx = req.params.idx;
+    var arr = {};
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT A.* FROM DATA_tbl as A WHERE A.idx = ? `;
+        db.query(sql, idx, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows[0]);
             } else {
                 console.log(err);
             }
@@ -101,65 +167,5 @@ router.get('/get_gbn/:id', setLog, async function(req, res, next) {
     });
     res.send(arr);
 });
-
-router.post('/set_qmemo', setLog, async function(req, res, next) {
-    const { id, memo } = req.body;
-
-    var cnt = 0;
-    var obj = {};
-
-    await new Promise(function(resolve, reject) {
-        const sql = `SELECT COUNT(*) as cnt FROM QMEMO_tbl WHERE id = ?`;
-        db.query(sql, id, function(err, rows, fields) {
-            if (!err) {
-                resolve(rows[0]);
-            } else {
-                console.log(err);
-            }
-        });
-    }).then(function(data) {
-        cnt = data.cnt;
-    });
-
-    await new Promise(function(resolve, reject) {
-        var sql = '';
-        if (cnt == 0) {
-            sql = `INSERT INTO QMEMO_tbl SET memo = ?, id = ?`;
-        } else {
-            sql = `UPDATE QMEMO_tbl SET memo = ? WHERE id = ?`;
-        }
-        db.query(sql, [memo, id], function(err, rows, fields) {
-            if (!err) {
-                resolve(rows);
-            } else {
-                console.log(err);
-            }
-        });
-    }).then(function(data) {
-        obj = utils.nvl(data);
-    });
-    res.send(obj);
-});
-
-router.get('/get_qmemo/:id', setLog, async function(req, res, next) {
-    const id = req.params.id;
-    var obj = {};
-    await new Promise(function(resolve, reject) {
-        const sql = `SELECT memo FROM QMEMO_tbl WHERE id = ?`;
-        db.query(sql, id, function(err, rows, fields) {
-            if (!err) {
-                resolve(rows[0]);
-            } else {
-                console.log(err);
-            }
-        });
-    }).then(function(data) {
-        obj = utils.nvl(data);
-    });
-    res.send(obj);
-});
-
-
-
 
 module.exports = router;

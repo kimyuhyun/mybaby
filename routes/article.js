@@ -63,8 +63,18 @@ router.get('/list', setLog, async function(req, res, next) {
             A.board_id,
             A.id,
             A.title,
+            A.memo,
             A.name1,
             A.filename0,
+            A.filename1,
+            A.filename2,
+            A.filename3,
+            A.filename4,
+            A.filename5,
+            A.filename6,
+            A.filename7,
+            A.filename8,
+            A.filename9,
             A.created,
             A.comment,
             (SELECT COUNT(*) FROM BOARD_tbl WHERE parent_idx = A.idx AND step = 2) as reply_cnt,
@@ -162,7 +172,7 @@ router.get('/reply/:idx/:id/:is_like1_sort', setLog, async function(req, res, ne
             (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx) as like1_cnt,
             (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx AND id = ?) as is_like1,
             (SELECT COUNT(*) FROM BOARD_tbl WHERE parent_idx = A.idx AND step = 3) as reply_cnt,
-            (SELECT filename0 FROM MEMB_tbl WHERE id = A.id) as user_thumb
+            (SELECT filename0 FROM MEMB_tbl WHERE id = ?) as user_thumb
             FROM BOARD_tbl as A
             WHERE A.step = 2
             AND A.parent_idx = ? `;
@@ -171,7 +181,7 @@ router.get('/reply/:idx/:id/:is_like1_sort', setLog, async function(req, res, ne
         } else {
             sql += `ORDER BY A.idx ASC`;
         }
-        db.query(sql, [id, idx], function(err, rows, fields) {
+        db.query(sql, [id, id, idx], function(err, rows, fields) {
             // console.log(rows);
             if (!err) {
                 resolve(rows);
@@ -215,8 +225,7 @@ router.get('/reply/:idx/:id/:is_like1_sort', setLog, async function(req, res, ne
             }
         });
     }
-
-    res.send(arr);
+    res.send(utils.nvl(arr));
 });
 
 router.get('/re_reply/:idx/:id', setLog, async function(req, res, next) {
@@ -344,7 +353,6 @@ router.get('/set_like1/:idx/:id', setLog, async function(req, res, next) {
     }).then(function(data) {
         arr.is_me = data.CNT;
     });
-
     res.send(arr);
 });
 
