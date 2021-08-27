@@ -53,25 +53,24 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
     var start = '';
 
     await new Promise(function(resolve, reject) {
-        const sql = `
-            SELECT sdate FROM DATA_tbl WHERE baby_idx = ? ORDER BY sdate DESC`;
+        const sql = `SELECT sdate FROM DATA_tbl WHERE baby_idx = ? ORDER BY sdate DESC`;
         db.query(sql, baby_idx, function(err, rows, fields) {
             if (!err) {
-                resolve(rows[0]);
+                resolve(rows);
             } else {
                 console.log(err);
             }
         });
     }).then(function(data) {
-        end = data.sdate;
-        start = moment(end).subtract(5, 'days').format('YYYY-MM-DD');
+        start = data[data.length-1].sdate;
+        end = data[0].sdate;
+        // start = moment(end).subtract(5, 'days').format('YYYY-MM-DD');
     });
 
     var arr = {};
 
     await new Promise(function(resolve, reject) {
-        const sql = `
-            SELECT sdate, SUM(ml) as ml FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? GROUP BY sdate ORDER BY sdate DESC`;
+        const sql = `SELECT sdate, SUM(ml) as ml FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? GROUP BY sdate ORDER BY sdate DESC`;
         db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
             if (!err) {
                 resolve(rows);

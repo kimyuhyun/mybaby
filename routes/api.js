@@ -159,7 +159,24 @@ router.get('/get_qmemo/:id', setLog, async function(req, res, next) {
     res.send(obj);
 });
 
+router.get('/', setLog, async function(req, res, next) {
 
+    // await new Promise(function(resolve, reject) {
+    //     var sql = ``;
+    //     db.query(sql, function(err, rows, fields) {
+    //         console.log(rows);
+    //         if (!err) {
+    //
+    //         } else {
+    //             console.log(err);
+    //         }
+    //     });
+    // }).then(function(data) {
+    //
+    // });
+
+    res.send('api');
+});
 
 
 module.exports = router;

@@ -46,14 +46,51 @@ async function setLog(req, res, next) {
     next();
 }
 
-router.get('/', function(req, res, next) {
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-    res.render('index', {
-        title: 'MyBaby',
-        session: ip,
-        mode: process.env.NODE_ENV,
+router.get('/list/:baby_idx/:sort1/:start/:end', setLog, async function(req, res, next) {
+    const { baby_idx, sort1, start, end } = req.params;
+    var arr = [];
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT * FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? ORDER BY ${sort1}`;
+        db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
+            // console.log(rows);
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then(function(data) {
+        arr = utils.nvl(data);
     });
+    res.send(arr);
 });
+
+router.get('/', setLog, async function(req, res, next) {
+
+    // var arr = [];
+    // await new Promise(function(resolve, reject) {
+    //     const sql = ``;
+    //     db.query(sql, function(err, rows, fields) {
+    //         console.log(rows);
+    //         if (!err) {
+    //             resolve(rows);
+    //         } else {
+    //             console.log(err);
+    //             res.send(err);
+    //             return;
+    //         }
+    //     });
+    // }).then(function(data) {
+    //     arr = utils.nvl(data);
+    // });
+    // res.send(arr);
+
+    res.send('stat');
+});
+
+
 
 module.exports = router;
