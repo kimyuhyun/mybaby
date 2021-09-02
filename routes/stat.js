@@ -47,11 +47,32 @@ async function setLog(req, res, next) {
 }
 
 
-router.get('/list/:baby_idx/:sort1/:start/:end', setLog, async function(req, res, next) {
-    const { baby_idx, sort1, start, end } = req.params;
+// router.get('/list/:baby_idx/:sort1/:start/:end', setLog, async function(req, res, next) {
+//     const { baby_idx, sort1, start, end } = req.params;
+//     var arr = [];
+//     await new Promise(function(resolve, reject) {
+//         const sql = `SELECT * FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? ORDER BY ${sort1}`;
+//         db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
+//             // console.log(rows);
+//             if (!err) {
+//                 resolve(rows);
+//             } else {
+//                 console.log(err);
+//                 res.send(err);
+//                 return;
+//             }
+//         });
+//     }).then(function(data) {
+//         arr = utils.nvl(data);
+//     });
+//     res.send(arr);
+// });
+
+router.get('/stat_list/:baby_idx/:start/:end', setLog, async function(req, res, next) {
+    const { baby_idx, start, end } = req.params;
     var arr = [];
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT * FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? ORDER BY ${sort1}`;
+        const sql = `SELECT gbn, COUNT(*) as cnt FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? GROUP BY gbn`;
         db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
             // console.log(rows);
             if (!err) {
@@ -152,8 +173,9 @@ router.get('/action_graph/:baby_idx/:start/:end', setLog, async function(req, re
 });
 
 
-router.get('/', setLog, async function(req, res, next) {
 
+
+router.get('/', setLog, async function(req, res, next) {
     // var arr = [];
     // await new Promise(function(resolve, reject) {
     //     const sql = ``;

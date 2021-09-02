@@ -129,6 +129,7 @@ router.get('/get_data_last_one/:baby_idx', setLog, async function(req, res, next
             A.etm,
             A.memo,
             A.ml,
+            (SELECT SUM(ml) FROM DATA_tbl WHERE baby_idx = A.baby_idx AND sdate = A.sdate) as ml_sum,
             A.val
             FROM
             DATA_tbl as A
@@ -163,6 +164,92 @@ router.get('/get_data_detail/:idx', setLog, async function(req, res, next) {
         });
     }).then(function(data) {
         arr = utils.nvl(data);
+    });
+    res.send(arr);
+});
+
+router.get('/get_time_line/:baby_idx/:gbn/:start/:end', setLog, async function(req, res, next) {
+    const { baby_idx, gbn, start, end } = req.params;
+
+    var arr = {};
+
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT sdate, SUM(ml) as ml FROM DATA_tbl WHERE baby_idx = ? AND gbn = ? AND sdate BETWEEN ? AND ? GROUP BY sdate ORDER BY sdate DESC`;
+        db.query(sql, [baby_idx, gbn, start, end], function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        arr.header = utils.nvl(data);
+    });
+
+    await new Promise(function(resolve, reject) {
+        const sql = `
+            SELECT
+            A.idx,
+            A.gbn,
+            A.sdate,
+            A.stm,
+            A.edate,
+            A.etm,
+            A.memo,
+            A.ml,
+            A.val
+            FROM
+            DATA_tbl as A
+            WHERE A.baby_idx = ?
+            AND gbn = ?
+            AND sdate BETWEEN ? AND ?
+            ORDER BY sdate DESC, stm DESC`;
+        db.query(sql, [baby_idx, gbn, start, end], function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        arr.body = utils.nvl(data);
+    });
+
+    res.send(arr);
+});
+
+router.get('/get_health/:baby_idx', setLog, async function(req, res, next) {
+    const baby_idx = req.params.baby_idx;
+    //diaper, hosp, temp, drug
+    var arr = {};
+
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT sdate, COUNT(*) as cnt FROM DATA_tbl WHERE baby_idx = ? AND gbn IN('diaper','hosp','temp','drug') GROUP BY sdate ORDER BY sdate DESC`;
+        db.query(sql, baby_idx, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        arr.header = utils.nvl(data);
+    });
+
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT idx, gbn, sdate, stm, edate, etm, ml, memo, val FROM DATA_tbl WHERE baby_idx = ? AND gbn IN('diaper','hosp','temp','drug') ORDER BY sdate DESC, stm DESC`;
+        db.query(sql, baby_idx, function(err, rows, fields) {
+            // console.log(rows);
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then(function(data) {
+        arr.body = utils.nvl(data);
     });
     res.send(arr);
 });
