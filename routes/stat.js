@@ -173,6 +173,26 @@ router.get('/action_graph/:baby_idx/:start/:end', setLog, async function(req, re
 });
 
 
+router.get('/growth_graph/:baby_idx', setLog, async function(req, res, next) {
+    const baby_idx = req.params.baby_idx;
+
+    var arr = [];
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT title, SUM(height1) as height1, SUM(weight) as weight, SUM(head_size) as head_size FROM BOARD_tbl WHERE baby_idx = ? AND board_id = 'growth' GROUP by title `;
+        db.query(sql, baby_idx, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then(function(data) {
+        arr = utils.nvl(data);
+    });
+    res.send(arr);
+});
 
 
 router.get('/', setLog, async function(req, res, next) {
