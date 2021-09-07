@@ -62,9 +62,10 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
             }
         });
     }).then(function(data) {
-        start = data[data.length-1].sdate;
-        end = data[0].sdate;
-        // start = moment(end).subtract(5, 'days').format('YYYY-MM-DD');
+        if (data.length > 0) {
+            start = data[data.length-1].sdate;
+            end = data[0].sdate;
+        }
     });
 
     var arr = {};
@@ -109,7 +110,7 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
     }).then(function(data) {
         arr.body = utils.nvl(data);
     });
-
+    
     res.send(arr);
 });
 
