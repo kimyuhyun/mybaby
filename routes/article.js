@@ -49,6 +49,7 @@ async function setLog(req, res, next) {
 router.get('/list', setLog, async function(req, res, next) {
     const board_id = req.query.board_id;
     const id = req.query.id;
+    const baby_idx = req.query.baby_idx;
     var page = req.query.page;
 
     page = page * 20;
@@ -89,8 +90,14 @@ router.get('/list', setLog, async function(req, res, next) {
             sql += ` AND id = ? `;
             arr.push(id);
         }
+
+        if (baby_idx != '') {
+            sql += ` AND baby_idx = ?`;
+            arr.push(baby_idx);
+        }
+
         sql += ` ORDER BY idx DESC `;
-        sql += ` LIMIT ` + page + `, 20 `;
+        sql += ` LIMIT ${page}, 20 `;
 
         db.query(sql, arr, function(err, rows, fields) {
             // console.log(rows);
