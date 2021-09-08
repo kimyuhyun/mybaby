@@ -269,7 +269,15 @@ router.get('/re_reply/:idx/:id', setLog, async function(req, res, next) {
     await new Promise(function(resolve, reject) {
         var sql = `
             SELECT
-            A.*,
+            A.idx,
+            A.parent_idx,
+            A.board_id,
+            A.id,
+            A.name1,
+            A.step,
+            A.memo,
+            A.filename0,
+            A.created,
             (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx) as like1_cnt,
             (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx AND id = ?) as is_like1,
             (SELECT COUNT(*) FROM BOARD_tbl WHERE parent_idx = A.idx AND step = 3) as reply_cnt,
@@ -288,7 +296,13 @@ router.get('/re_reply/:idx/:id', setLog, async function(req, res, next) {
             }
         });
     }).then(function(data) {
-        tmpArr = data;
+        var tmpRows = data;
+        var i = 0;
+        for (obj of tmpRows) {
+            i++;
+            obj.groups = i;
+            tmpArr.push(obj);
+        }
     });
 
     for (obj of tmpArr) {
@@ -297,7 +311,15 @@ router.get('/re_reply/:idx/:id', setLog, async function(req, res, next) {
         await new Promise(function(resolve, reject) {
             var sql = `
                 SELECT
-                A.*,
+                A.idx,
+                A.parent_idx,
+                A.board_id,
+                A.id,
+                A.name1,
+                A.step,
+                A.memo,
+                A.filename0,
+                A.created,
                 (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx) as like1_cnt,
                 (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx AND id = ?) as is_like1,
                 (SELECT filename0 FROM MEMB_tbl WHERE id = A.id) as user_thumb,
@@ -318,6 +340,7 @@ router.get('/re_reply/:idx/:id', setLog, async function(req, res, next) {
             });
         }).then(function(data) {
             for (obj2 of data) {
+                obj2.groups = obj.groups;
                 arr.push(obj2);
             }
         });
