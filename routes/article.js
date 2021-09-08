@@ -52,9 +52,12 @@ router.get('/list', setLog, async function(req, res, next) {
     const baby_idx = req.query.baby_idx;
     var page = req.query.page;
 
+    const lang = req.query.lang;
+
     page = page * 20;
 
     var arr = [];
+    arr.push(lang);
     arr.push(board_id);
 
     await new Promise(function(resolve, reject) {
@@ -85,6 +88,7 @@ router.get('/list', setLog, async function(req, res, next) {
             FROM
             BOARD_tbl as A
             WHERE step = 1
+            AND lang = ?
             AND board_id = ? `;
         if (id != '') {
             sql += ` AND id = ? `;
