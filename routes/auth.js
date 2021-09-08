@@ -54,9 +54,10 @@ router.post('/register', setLog, async function(req, res, next) {
     var sql = '';
     var cnt = 0;
     var pid = id;
+    var idx = '';
 
     await new Promise(function(resolve, reject) {
-        sql = `SELECT COUNT(*) cnt, pid FROM MEMB_tbl WHERE id = ?`;
+        sql = `SELECT COUNT(*) cnt, pid, idx FROM MEMB_tbl WHERE id = ?`;
         db.query(sql, id, function(err, rows, fields) {
             if (!err) {
                 resolve(rows[0]);
@@ -70,6 +71,7 @@ router.post('/register', setLog, async function(req, res, next) {
         cnt = data.cnt;
         if (data.pid) {
             pid = data.pid;
+            idx = data.idx;
         }
     });
 
@@ -80,18 +82,21 @@ router.post('/register', setLog, async function(req, res, next) {
             sql = 'INSERT INTO MEMB_tbl SET pid = ?, id = ?, name1 = ?, filename0 = ?, email = ?, level1 = 9, created = NOW(), modified = NOW()';
             db.query(sql, [pid, id, name1, filename0, email], function(err, rows, fields) {
                 if (!err) {
-                    resolve();
+                    resolve(row);
                 } else {
                     console.log(err);
                     res.send(err);
                     return;
                 }
             });
-        }).then();
+        }).then(function(data) {
+            idx = data.insertId;
+        });
 
         res.send({
             code: 1,
             pid: pid,
+            idx: idx,
             is_baby: false
         });
     } else {
@@ -120,6 +125,7 @@ router.post('/register', setLog, async function(req, res, next) {
         res.send({
             code: 1,
             pid: pid,
+            idx: idx,
             is_baby: is_baby
         });
     }

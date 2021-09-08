@@ -110,7 +110,7 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
     }).then(function(data) {
         arr.body = utils.nvl(data);
     });
-    
+
     res.send(arr);
 });
 
