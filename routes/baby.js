@@ -83,6 +83,7 @@ router.get('/get_baby/:pid/:id', setLog, async function(req, res, next) {
     await new Promise(function(resolve, reject) {
         const sql = `SELECT baby_idx FROM MY_DEFAULT_BABY_tbl WHERE id = ?`;
         db.query(sql, id, function(err, rows, fields) {
+            // console.log(rows);
             if (!err) {
                 resolve(rows[0]);
             } else {
@@ -95,7 +96,9 @@ router.get('/get_baby/:pid/:id', setLog, async function(req, res, next) {
         }
     });
 
-    if (my_baby_idx != 0) {
+    if (my_baby_idx == 0) {
+        arr = tmpArr;
+    } else {
         for (obj of tmpArr) {
             obj.default = 0;
             if (obj.idx == my_baby_idx) {

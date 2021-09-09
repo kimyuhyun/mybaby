@@ -83,7 +83,7 @@ router.post('/register', setLog, async function(req, res, next) {
             sql = 'INSERT INTO MEMB_tbl SET pid = ?, id = ?, name1 = ?, filename0 = ?, email = ?, level1 = 9, created = NOW(), modified = NOW()';
             db.query(sql, [pid, id, name1, filename0, email], function(err, rows, fields) {
                 if (!err) {
-                    resolve(row);
+                    resolve(rows);
                 } else {
                     console.log(err);
                     res.send(err);
@@ -144,7 +144,7 @@ router.get('/set_invite_code/:code/:id', setLog, async function(req, res, next) 
 
     var pid = '';
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT pid, COUNT(*) as cnt FROM INVITE_tbl WHERE idx = ?`;
+        const sql = `SELECT pid, COUNT(*) as cnt FROM INVITE_tbl WHERE code1 = ?`;
         db.query(sql, code, function(err, rows, fields) {
             console.log(rows);
             if (!err) {
@@ -194,12 +194,12 @@ router.get('/set_invite_code/:code/:id', setLog, async function(req, res, next) 
             }
         });
     }).then(function(data) {
-        if (!data.name1) {
-            obj.code = 0;
-        } else {
+        if (data.name1 && pid) {
             obj.code = 1;
             obj.pid = pid;
             obj.name1 = data.name1;
+        } else {
+            obj.code = 0;
         }
     });
     res.send(obj);
@@ -213,7 +213,7 @@ router.get('/get_invite_code/:pid', setLog, async function(req, res, next) {
     var code = 0;
 
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT COUNT(*) as cnt, idx FROM INVITE_tbl WHERE pid = ?`;
+        const sql = `SELECT COUNT(*) as cnt, code1 FROM INVITE_tbl WHERE pid = ?`;
         db.query(sql, pid, function(err, rows, fields) {
             if (!err) {
                 resolve(rows[0]);
@@ -225,7 +225,7 @@ router.get('/get_invite_code/:pid', setLog, async function(req, res, next) {
         });
     }).then(function(data) {
         if (data.cnt != 0) {
-            code = data.idx;
+            code = data.code1;
             cnt = data.cnt;
         } else {
             cnt = data.cnt;
@@ -233,9 +233,11 @@ router.get('/get_invite_code/:pid', setLog, async function(req, res, next) {
     });
 
     if (cnt == 0) {
+        var shortid = require('shortid');
+        code = shortid.generate();
         await new Promise(function(resolve, reject) {
-            const sql = `INSERT INTO INVITE_tbl SET pid = ?`;
-            db.query(sql, pid, function(err, rows, fields) {
+            const sql = `INSERT INTO INVITE_tbl SET pid = ?, code1 = ?`;
+            db.query(sql, [pid, code], function(err, rows, fields) {
                 if (!err) {
                     resolve(rows);
                 } else {
@@ -244,12 +246,109 @@ router.get('/get_invite_code/:pid', setLog, async function(req, res, next) {
                     return;
                 }
             });
-        }).then(function(data) {
-            idx = data.insertId;
-        });
+        }).then();
     }
-    res.send({code: idx});
+    res.send({code: code});
 });
+
+
+router.get('/memb_leave/:id', setLog, async function(req, res, next) {
+    const id = req.params.id;
+
+    await new Promise(function(resolve, reject) {
+        const sql = `DELETE FROM MEMB_tbl WHERE id = ?`;
+        db.query(sql, id, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then();
+
+    await new Promise(function(resolve, reject) {
+        const sql = `DELETE FROM MY_DEFAULT_BABY_tbl WHERE id = ?`;
+        db.query(sql, id, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then();
+
+    await new Promise(function(resolve, reject) {
+        const sql = `DELETE FROM MY_RELATION_tbl WHERE id = ?`;
+        db.query(sql, id, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then();
+
+    await new Promise(function(resolve, reject) {
+        const sql = `DELETE FROM GBN_tbl WHERE id = ?`;
+        db.query(sql, id, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then();
+
+    await new Promise(function(resolve, reject) {
+        const sql = `DELETE FROM QMEMO_tbl WHERE id = ?`;
+        db.query(sql, id, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then();
+
+    await new Promise(function(resolve, reject) {
+        const sql = `DELETE FROM BABY_tbl WHERE pid = ?`;
+        db.query(sql, id, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then();
+
+    await new Promise(function(resolve, reject) {
+        const sql = `DELETE FROM INVITE_tbl WHERE pid = ?`;
+        db.query(sql, id, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then();
+
+    res.send('memb_leave');
+});
+
 
 router.get('/', setLog, async function(req, res, next) {
     res.send('auth');
