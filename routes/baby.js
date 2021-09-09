@@ -95,15 +95,7 @@ router.get('/get_baby/:pid/:id', setLog, async function(req, res, next) {
         }
     });
 
-    if (my_baby_idx == 0) {
-        for (i in tmpArr) {
-            tmpArr[i].default = 0;
-            if (i == 0) {
-                tmpArr[i].default = 1;
-            }
-            arr.push(tmpArr[i]);
-        }
-    } else {
+    if (my_baby_idx != 0) {
         for (obj of tmpArr) {
             obj.default = 0;
             if (obj.idx == my_baby_idx) {
@@ -113,16 +105,49 @@ router.get('/get_baby/:pid/:id', setLog, async function(req, res, next) {
         }
     }
 
+    //default 지정 다시 체크!!
+    var is_set_default = false;
+    for (obj of arr) {
+        if (obj.default == 1) {
+            is_set_default = true;
+            break;
+        }
+    }
 
+    if (!is_set_default && arr.length > 0) {
+        arr[0].default = 1;
+    }
+    //
 
     res.send(arr);
 });
 
 
-router.get('/get_baby_detail/:idx', setLog, async function(req, res, next) {
+router.get('/get_baby_detail/:idx/:id', setLog, async function(req, res, next) {
     const idx = req.params.idx;
+    const id = req.params.id;
+
+    var relation = 0;
 
     var arr = {};
+
+    //관계구하기!!
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT relation FROM MY_RELATION_tbl WHERE baby_idx = ? AND id = ?`;
+        db.query(sql, [idx, id], function(err, rows, fields) {
+            // console.log(rows);
+            if (!err) {
+                resolve(rows[0]);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        if (data) {
+            relation = data.relation;
+        }
+    });
+    //
 
     await new Promise(function(resolve, reject) {
         const sql = `SELECT * FROM BABY_tbl WHERE idx = ?`;
@@ -137,6 +162,8 @@ router.get('/get_baby_detail/:idx', setLog, async function(req, res, next) {
     }).then(function(data) {
         arr = utils.nvl(data);
     });
+
+    arr.relation = relation;
 
     res.send(arr);
 });
@@ -222,7 +249,6 @@ router.post('/set_baby_info', setLog, async function(req, res, next) {
     await new Promise(function(resolve, reject) {
         sql = `SELECT COUNT(*) as cnt FROM MY_RELATION_tbl WHERE baby_idx = ? AND id = ?`;
         db.query(sql, [idx, id], function(err, rows, fields) {
-            // console.log(rows);
             if (!err) {
                 resolve(rows[0]);
             } else {
@@ -235,13 +261,45 @@ router.post('/set_baby_info', setLog, async function(req, res, next) {
         cnt = data.cnt;
     });
 
-    if (cnt == 0) {
-        sql = `INSERT INTO MY_RELATION_tbl SET baby_idx = ?, id = ?, relation = ? `;
-        db.query(sql, [idx, id, relation]);
-    } else {
-        sql = `UPDATE MY_RELATION_tbl SET relation = ? WHERE baby_idx = ? AND id = ? `;
-        db.query(sql, [relation, idx, id]);
-    }
+    await new Promise(function(resolve, reject) {
+        if (cnt == 0) {
+            sql = `INSERT INTO MY_RELATION_tbl SET baby_idx = ?, id = ?, relation = ? `;
+            db.query(sql, [idx, id, relation]);
+        } else {
+            sql = `UPDATE MY_RELATION_tbl SET relation = ? WHERE baby_idx = ? AND id = ? `;
+            db.query(sql, [relation, idx, id]);
+        }
+        resolve();
+    }).then();
+
+    //default 전부 삭제!!
+    await new Promise(function(resolve, reject) {
+        sql = `DELETE FROM MY_DEFAULT_BABY_tbl WHERE id = ?`;
+        db.query(sql, id, function(err, rows, fields) {
+            if (!err) {
+                resolve();
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then();
+    //
+
+    //default 새로 등록!!
+    await new Promise(function(resolve, reject) {
+        sql = `INSERT INTO MY_DEFAULT_BABY_tbl SET id = ?, baby_idx = ?`;
+        db.query(sql, [id, idx], function(err, rows, fields) {
+            if (!err) {
+                resolve();
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then();
     //
 
     res.send({ code: 1 });

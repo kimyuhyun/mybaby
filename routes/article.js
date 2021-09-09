@@ -49,11 +49,9 @@ async function setLog(req, res, next) {
 router.get('/list', setLog, async function(req, res, next) {
     const board_id = req.query.board_id;
     const id = req.query.id;
-    const baby_idx = req.query.baby_idx;
-    var page = req.query.page;
-
     const lang = req.query.lang;
 
+    var page = req.query.page;
     page = page * 20;
 
     var arr = [];
@@ -88,16 +86,12 @@ router.get('/list', setLog, async function(req, res, next) {
             FROM
             BOARD_tbl as A
             WHERE step = 1
+            AND is_use = 1
             AND lang = ?
             AND board_id = ? `;
         if (id != '') {
             sql += ` AND id = ? `;
             arr.push(id);
-        }
-
-        if (baby_idx != '') {
-            sql += ` AND baby_idx = ?`;
-            arr.push(baby_idx);
         }
 
         sql += ` ORDER BY idx DESC `;
@@ -414,6 +408,64 @@ router.get('/set_like1/:idx/:id', setLog, async function(req, res, next) {
     res.send(arr);
 });
 
+
+router.get('/growth_list', setLog, async function(req, res, next) {
+    const pid = req.query.pid;
+    const baby_idx = req.query.baby_idx;
+    var page = req.query.page;
+
+    page = page * 20;
+
+    var arr = [];
+
+    await new Promise(function(resolve, reject) {
+        var sql = `
+            SELECT
+            A.idx,
+            A.board_id,
+            A.id,
+            A.title,
+            A.memo,
+            A.name1,
+            A.filename0,
+            A.filename1,
+            A.filename2,
+            A.filename3,
+            A.filename4,
+            A.filename5,
+            A.filename6,
+            A.filename7,
+            A.filename8,
+            A.filename9,
+            A.created,
+            A.comment,
+            (SELECT COUNT(*) FROM BOARD_tbl WHERE parent_idx = A.idx AND step = 2) as reply_cnt,
+            (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx) as like1,
+            (SELECT COUNT(*) FROM BOARD_SEE_tbl WHERE board_idx = A.idx) as see,
+            (SELECT filename0 FROM MEMB_tbl WHERE id = A.id) as user_thumb
+            FROM
+            BOARD_tbl as A
+            WHERE step = 1
+            AND board_id = 'growth'
+            AND id = ?
+            AND baby_idx = ?
+            ORDER BY idx DESC
+            LIMIT ${page}, 20
+        `;
+
+        db.query(sql, [pid, baby_idx], function(err, rows, fields) {
+            // console.log(rows);
+            if (!err) {
+                resolve(rows);
+            } else {
+                resolve(err);
+            }
+        });
+    }).then(function(data) {
+        arr = utils.nvl(data);
+    });
+    res.send(arr);
+});
 
 router.get('/', setLog, async function(req, res, next) {
 

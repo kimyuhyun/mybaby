@@ -45,6 +45,22 @@ async function setLog(req, res, next) {
     next();
 }
 
+router.get('/get_push/:id', setLog, async function(req, res, next) {
+    const id = req.params.id;
+
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT is_push FROM MEMB_tbl WHERE id = ?`;
+        db.query(sql, id, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows[0]);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        res.send(data);
+    });
+});
 
 router.get('/get_gbn/:id', setLog, async function(req, res, next) {
     const id = req.params.id;
@@ -101,6 +117,32 @@ router.get('/get_gbn/:id', setLog, async function(req, res, next) {
     });
     res.send(arr);
 });
+
+
+router.post('/set_gbn_sort/:id', setLog, async function(req, res, next) {
+    const id = req.params.id;
+    const idxs = req.body.idxs;
+
+    var tmp = idxs.split(',');
+
+    for (i in tmp) {
+        if (i > 0) {
+            await new Promise(function(resolve, reject) {
+                const sql = `UPDATE GBN_tbl SET sort1 = ? WHERE idx = ?`;
+                db.query(sql, [i, tmp[i]], function(err, rows, fields) {
+                    if (!err) {
+                        resolve();
+                    } else {
+                        console.log(err);
+                    }
+                });
+            }).then();
+        }
+    }
+    res.send({ code: 1 });
+});
+
+
 
 router.post('/set_qmemo', setLog, async function(req, res, next) {
     const { id, memo } = req.body;

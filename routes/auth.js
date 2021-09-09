@@ -49,7 +49,7 @@ async function setLog(req, res, next) {
 
 
 router.post('/register', setLog, async function(req, res, next) {
-    const { id, name1, filename0, email } = req.body;
+    var { id, name1, filename0, email } = req.body;
 
     var sql = '';
     var cnt = 0;
@@ -57,7 +57,7 @@ router.post('/register', setLog, async function(req, res, next) {
     var idx = '';
 
     await new Promise(function(resolve, reject) {
-        sql = `SELECT COUNT(*) cnt, pid, idx FROM MEMB_tbl WHERE id = ?`;
+        sql = `SELECT COUNT(*) cnt, pid, idx, name1, filename0, email FROM MEMB_tbl WHERE id = ?`;
         db.query(sql, id, function(err, rows, fields) {
             if (!err) {
                 resolve(rows[0]);
@@ -69,13 +69,14 @@ router.post('/register', setLog, async function(req, res, next) {
         });
     }).then(function(data) {
         cnt = data.cnt;
-        if (data.pid) {
+        if (cnt > 0) {
             pid = data.pid;
             idx = data.idx;
+            name1 = data.name1;
+            filename0 = data.filename0;
+            email = data.email;
         }
     });
-
-    console.log('cnt', cnt);
 
     if (cnt == 0) {
         await new Promise(function(resolve, reject) {
@@ -97,6 +98,9 @@ router.post('/register', setLog, async function(req, res, next) {
             code: 1,
             pid: pid,
             idx: idx,
+            name1: name1,
+            thumb: filename0,
+            email: email,
             is_baby: false
         });
     } else {
@@ -119,25 +123,29 @@ router.post('/register', setLog, async function(req, res, next) {
             }
         });
 
-        sql = "UPDATE MEMB_tbl SET modified = NOW() WHERE id = ?";
+        sql = "UPDATE MEMB_tbl SET is_logout = 0, modified = NOW() WHERE id = ?";
         db.query(sql, id);
 
         res.send({
             code: 1,
             pid: pid,
             idx: idx,
+            name1: name1,
+            thumb: filename0,
+            email: email,
             is_baby: is_baby
         });
     }
 });
 
-router.get('/set_pid/:idx/:id', setLog, async function(req, res, next) {
-    const { idx, id } = req.params;
+router.get('/set_invite_code/:code/:id', setLog, async function(req, res, next) {
+    const code = req.params.code;
+    const id = req.params.id;
 
     var pid = '';
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT pid FROM MEMB_tbl WHERE idx = ?`;
-        db.query(sql, idx, function(err, rows, fields) {
+        const sql = `SELECT pid FROM INVITE_tbl WHERE idx = ?`;
+        db.query(sql, code, function(err, rows, fields) {
             console.log(rows);
             if (!err) {
                 resolve(rows[0]);
@@ -153,16 +161,12 @@ router.get('/set_pid/:idx/:id', setLog, async function(req, res, next) {
         }
     });
 
-    if (!pid) {
-        res.send({ code: 0 });
-        return;
-    }
 
     //pid를 업데이트
     await new Promise(function(resolve, reject) {
         const sql = `UPDATE MEMB_tbl set pid = ? WHERE id = ?`;
         db.query(sql, [pid, id], function(err, rows, fields) {
-            console.log(rows);
+            // console.log(rows);
             if (!err) {
                 resolve(rows);
             } else {
@@ -199,6 +203,52 @@ router.get('/set_pid/:idx/:id', setLog, async function(req, res, next) {
         }
     });
     res.send(obj);
+});
+
+
+
+router.get('/get_invite_code/:pid', setLog, async function(req, res, next) {
+    const pid = req.params.pid;
+    var cnt = 0;
+    var code = 0;
+
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT COUNT(*) as cnt, idx FROM INVITE_tbl WHERE pid = ?`;
+        db.query(sql, pid, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows[0]);
+            } else {
+                console.log(err);
+                res.send(err);
+                return;
+            }
+        });
+    }).then(function(data) {
+        if (data.cnt != 0) {
+            code = data.idx;
+            cnt = data.cnt;
+        } else {
+            cnt = data.cnt;
+        }
+    });
+
+    if (cnt == 0) {
+        await new Promise(function(resolve, reject) {
+            const sql = `INSERT INTO INVITE_tbl SET pid = ?`;
+            db.query(sql, pid, function(err, rows, fields) {
+                if (!err) {
+                    resolve(rows);
+                } else {
+                    console.log(err);
+                    res.send(err);
+                    return;
+                }
+            });
+        }).then(function(data) {
+            idx = data.insertId;
+        });
+    }
+    res.send({code: idx});
 });
 
 router.get('/', setLog, async function(req, res, next) {
