@@ -156,7 +156,7 @@ router.get('/set_invite_code/:code/:id', setLog, async function(req, res, next) 
             }
         });
     }).then(function(data) {
-        if (data) {
+        if (data.pid) {
             pid = data.pid;
         }
     });
