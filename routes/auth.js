@@ -144,7 +144,7 @@ router.get('/set_invite_code/:code/:id', setLog, async function(req, res, next) 
 
     var pid = '';
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT pid FROM INVITE_tbl WHERE idx = ?`;
+        const sql = `SELECT pid, COUNT(*) as cnt FROM INVITE_tbl WHERE idx = ?`;
         db.query(sql, code, function(err, rows, fields) {
             console.log(rows);
             if (!err) {
@@ -156,7 +156,7 @@ router.get('/set_invite_code/:code/:id', setLog, async function(req, res, next) 
             }
         });
     }).then(function(data) {
-        if (data.pid) {
+        if (data.cnt > 0) {
             pid = data.pid;
         }
     });
@@ -194,7 +194,7 @@ router.get('/set_invite_code/:code/:id', setLog, async function(req, res, next) 
             }
         });
     }).then(function(data) {
-        if (!data) {
+        if (!data.name1) {
             obj.code = 0;
         } else {
             obj.code = 1;
