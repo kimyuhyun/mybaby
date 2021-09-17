@@ -47,10 +47,61 @@ async function setLog(req, res, next) {
 }
 
 
+async function getDataFast(baby_idx) {
+    var end = moment().format('YYYY-MM-DD');
+    var start = moment().subtract(1, 'days').format('YYYY-MM-DD');
+
+    var arr = {};
+
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT sdate, SUM(ml) as ml FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? GROUP BY sdate ORDER BY sdate DESC`;
+        db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        arr.header = utils.nvl(data);
+    });
+
+    await new Promise(function(resolve, reject) {
+        const sql = `
+            SELECT
+            A.idx,
+            A.gbn,
+            A.sdate,
+            A.stm,
+            A.edate,
+            A.etm,
+            A.memo,
+            A.ml,
+            A.val
+            FROM
+            DATA_tbl as A
+            WHERE A.baby_idx = ?
+            AND sdate BETWEEN ? AND ?
+            ORDER BY sdate DESC, stm DESC `;
+        db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        arr.body = utils.nvl(data);
+    });
+
+    return arr;
+};
+
 router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
     const baby_idx = req.params.baby_idx;
     var end = '';
     var start = '';
+    var tmpArr = [];
 
     await new Promise(function(resolve, reject) {
         const sql = `SELECT sdate FROM DATA_tbl WHERE baby_idx = ? ORDER BY sdate DESC`;
@@ -62,13 +113,23 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
             }
         });
     }).then(function(data) {
-        if (data.length > 0) {
-            start = data[data.length-1].sdate;
-            end = data[0].sdate;
-        }
+        tmpArr = utils.nvl(data);
     });
 
     var arr = {};
+
+    if (tmpArr.length > 0) {
+        start = tmpArr[tmpArr.length-1].sdate;
+        end = tmpArr[0].sdate;
+    }
+
+    if (tmpArr.length > 50) {
+        arr = await getDataFast(baby_idx);
+        res.send(arr);
+        return;
+    }
+
+
 
     await new Promise(function(resolve, reject) {
         const sql = `SELECT sdate, SUM(ml) as ml FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? GROUP BY sdate ORDER BY sdate DESC`;

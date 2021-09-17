@@ -47,6 +47,8 @@ router.post('/list', userChecking, async function(req, res, next) {
     var table = req.query.table;
     var board_id = req.query.board_id;
     var level1 = req.query.level1;
+    var step = req.query.step;
+    var parent_idx = req.query.parent_idx;
     var params;
 
     if (req.body.request != null) {
@@ -67,6 +69,14 @@ router.post('/list', userChecking, async function(req, res, next) {
 
     if (board_id != null) {
         where += " AND board_id = '" + board_id + "'";
+    }
+
+    if (step != null) {
+        where += " AND step = '" + step + "'";
+    }
+
+    if (parent_idx != null) {
+        where += " AND parent_idx = '" + parent_idx + "'";
     }
 
     if (level1 != null) {
@@ -215,24 +225,43 @@ router.post('/remove', userChecking, async function(req, res, next) {
     var table = req.query.table;
     var params = JSON.parse(req.body.request);
     console.log(params);
-    var sql = "";
+    var sql = ``;
     for (idx of params.selected) {
-        sql = "DELETE FROM " + table + " WHERE idx = " + idx;
+        sql = `DELETE FROM ${table} WHERE idx = ${idx}`;
         db.query(sql);
         console.log(sql);
     }
-
     var arr = new Object();
     arr['code'] = 1;
     res.send(arr);
 });
 
+router.post('/reply_delete', userChecking, async function(req, res, next) {
+    var table = req.query.table;
+    var params = JSON.parse(req.body.request);
+    console.log(params);
+    var sql = ``;
+    for (idx of params.selected) {
+        sql = `UPDATE ${table} SET id='admin', name1='관리자', memo='삭제된 댓글 입니다.', filename0='' WHERE idx = ${idx}`;
+        db.query(sql);
+    }
+    var arr = new Object();
+    arr['code'] = 1;
+    res.send(arr);
+});
 
 router.post('/copy', userChecking, async function(req, res, next) {
     const table = req.query.table;
-    let sql = "";
+    var sql = '';
+    var arr = [];
 
-    for (idx of req.body.idx) {
+    if (!Array.isArray(req.body.idx)) {
+        arr.push(req.body.idx);
+    } else {
+        arr = req.body.idx;
+    }
+
+    for (idx of arr) {
         await new Promise(function(resolve, reject) {
             sql = 'SELECT * FROM ' + table + ' WHERE idx = ?';
             db.query(sql, idx, function(err, rows, fields) {
@@ -254,8 +283,13 @@ router.post('/copy', userChecking, async function(req, res, next) {
                         }
                     }
                     sql += 'created=NOW(),modified=NOW()';
+
                     db.query(sql, records, function(err, rows, fields) {
-                        resolve();
+                        if (!err) {
+                            resolve();
+                        } else {
+                            console.log(err);
+                        }
                     });
                 } else {
                     console.log(err);

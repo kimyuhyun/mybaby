@@ -201,6 +201,121 @@ router.get('/get_qmemo/:id', setLog, async function(req, res, next) {
     res.send(obj);
 });
 
+
+router.get('/get_inoculation_all/:pid', setLog, async function(req, res, next) {
+    const today = moment().format('YYYY-MM-DD');
+    const pid = req.params.pid;
+    var arr = [];
+    var tmpArr = [];
+
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT idx, title, place, sdate, edate, is_free FROM INOCULATION_tbl WHERE edate >= ? ORDER BY sdate ASC `;
+        console.log(sql);
+        db.query(sql, today, function(err, rows, fields) {
+            // console.log(rows);
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        tmpArr = utils.nvl(data);
+    });
+
+    var rows = [];
+    var i = 0;
+    for (obj of tmpArr) {
+        i++;
+        obj.group = i;
+        arr.push(obj);
+        await new Promise(function(resolve, reject) {
+            const sql = `SELECT idx, memo, created FROM INOCULATION_MEMO_tbl WHERE pid = ? AND inoc_idx = ?  ORDER BY idx ASC `;
+            db.query(sql, [pid, obj.idx], function(err, rows, fields) {
+                // console.log(rows);
+                if (!err) {
+                    resolve(rows);
+                } else {
+                    console.log(err);
+                }
+            });
+        }).then(function(data) {
+            rows = utils.nvl(data);
+            for (row of rows) {
+                row.group = i;
+                row.sdate = obj.sdate;
+                arr.push(row);
+            }
+        });
+    }
+
+    res.send(arr);
+});
+
+router.get('/get_inoculation_memo/:pid', setLog, async function(req, res, next) {
+    const pid = req.params.pid;
+    var articleArr = [];
+    var arr = [];
+    var tmpArr = [];
+
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT DISTINCT inoc_idx FROM INOCULATION_MEMO_tbl WHERE pid = ? ORDER BY idx DESC `;
+        db.query(sql, pid, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        for (row of data) {
+            articleArr.push(row.inoc_idx);
+        }
+    });
+
+    await new Promise(function(resolve, reject) {
+        const sql = `SELECT idx, title, place, sdate, edate, is_free FROM INOCULATION_tbl WHERE idx IN (${articleArr}) ORDER BY sdate ASC `;
+        db.query(sql, function(err, rows, fields) {
+            // console.log(rows);
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        tmpArr = utils.nvl(data);
+    });
+
+    var rows = [];
+    var i = 0;
+    for (obj of tmpArr) {
+        i++;
+        obj.group = i;
+        arr.push(obj);
+        await new Promise(function(resolve, reject) {
+            const sql = `SELECT idx, memo, created FROM INOCULATION_MEMO_tbl WHERE pid = ? AND inoc_idx = ?  ORDER BY idx ASC `;
+            db.query(sql, [pid, obj.idx], function(err, rows, fields) {
+                // console.log(rows);
+                if (!err) {
+                    resolve(rows);
+                } else {
+                    console.log(err);
+                }
+            });
+        }).then(function(data) {
+            rows = utils.nvl(data);
+            for (row of rows) {
+                row.group = i;
+                row.sdate = obj.sdate;
+                arr.push(row);
+            }
+        });
+    }
+
+    res.send(arr);
+});
+
 router.get('/', setLog, async function(req, res, next) {
 
     // await new Promise(function(resolve, reject) {

@@ -22,8 +22,29 @@ var menu = [{
                 "link": "/admin/page/notice"
             },
             {
+                "title": "속닥속닥",
+                "link": "/admin/page/free"
+            },
+            {
+                "title": "성장일기",
+                "link": "/admin/page/growth"
+            },
+            {
                 "title": "고객센터",
                 "link": "/admin/page/cscenter"
+            },
+            {
+                "title": "신고",
+                "link": "/admin/page/singo"
+            },
+        ]
+    },
+    {
+        "title": "예방접종",
+        "child": [
+            {
+                "title": "예방접종",
+                "link": "/admin/page/inoculation"
             },
         ]
     },
