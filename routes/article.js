@@ -470,6 +470,7 @@ router.get('/growth_list', setLog, async function(req, res, next) {
 
 router.get('/set_aricle_push/:parent_idx', setLog, async function(req, res, next) {
     var parent_idx = req.params.parent_idx;
+    var dest_id = '';
     var writer = '';
     var board_id = '';
     var step = 0;
@@ -485,6 +486,8 @@ router.get('/set_aricle_push/:parent_idx', setLog, async function(req, res, next
             }
         });
     }).then(function(data) {
+        dest_id = data.id;
+
         tmp_idx = data.parent_idx;
         step = data.step;
         writer = data.id;
@@ -508,14 +511,12 @@ router.get('/set_aricle_push/:parent_idx', setLog, async function(req, res, next
             });
         }).then(function(data) {
             tmp_idx = data.idx;
-            step = data.step;
             writer = data.id;
-            board_id = data.board_id;
         });
     }
 
     await new Promise(function(resolve, reject) {
-        var result = utils.sendArticlePush(writer, '등록하신 게시물에 댓글이 등록되었습니다.', parent_idx, writer, board_id);
+        var result = utils.sendArticlePush(dest_id, '등록하신 게시물에 댓글이 등록되었습니다.', parent_idx, writer, board_id);
         resolve(result);
     }).then(function(data) {
         res.send({ data: data});
