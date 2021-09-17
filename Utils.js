@@ -1,5 +1,8 @@
 const fs = require('fs');
 const db = require('./db');
+const requestIp = require('request-ip');
+const axios = require('axios');
+const crypto = require('crypto');
 
 class Utils {
     setSaveMenu(req) {
@@ -52,6 +55,140 @@ class Utils {
                 resolve(0);
             }
         });
+    }
+
+    async sendPush(id, msg, menu_flag) {
+        var fcmArr = [];
+        await new Promise(function(resolve, reject) {
+            var sql = "SELECT fcm FROM MEMB_tbl WHERE id = ? AND IS_push = 1 AND is_logout = 0"
+            db.query(sql, id, function(err, rows, fields) {
+                console.log(rows.length);
+                if (!err) {
+                    if (rows.length > 0) {
+                        resolve(rows[0].fcm);
+                    } else {
+                        console.log(id + '의 IS_ALARM, IS_LOGOUT 값을 체크해보세요.');
+                        return;
+                    }
+                } else {
+                    console.log(err);
+                    return;
+                }
+            });
+        }).then(function(data) {
+            fcmArr.push(data);
+        });
+
+        var fields = {};
+        fields['notification'] = {};
+        fields['data'] = {};
+
+        fields['registration_ids'] = fcmArr;
+        fields['notification']['title'] = 'Mybaby';
+        fields['notification']['body'] = msg;
+        // fields['notification']['click_action'] = 'NOTI_CLICK'; //액티비티 다이렉트 호출
+        fields['priority'] = 'high';
+        fields['data']['menu_flag'] = menu_flag;               //키값은 대문자 안먹음..
+
+        var config = {
+            method: 'post',
+            url: 'https://fcm.googleapis.com/fcm/send',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'key=' + process.env.FCM_SERVER_KEY
+            },
+            data: JSON.stringify(fields),
+        };
+
+        var result = '';
+
+        await new Promise(function(resolve, reject) {
+            axios(config).then(function (response) {
+                //알림내역저장
+                if (response.data.success == 1) {
+                    // const sql = "INSERT INTO ALARM_tbl SET ID = ?, MESSAGE = ?, WDATE = NOW()";
+                    // db.query(sql, [id, msg]);
+                }
+                //
+                resolve(response.data);
+            }).catch(function (error) {
+                resolve(error);
+            });
+        }).then(function(data) {
+            result = data;
+        });
+        return result;
+    }
+
+    async sendArticlePush(id, msg, idx, writer, board_id) {
+        var fcmArr = [];
+        await new Promise(function(resolve, reject) {
+            var sql = "SELECT fcm FROM MEMB_tbl WHERE id = ? AND IS_push = 1 AND is_logout = 0"
+            db.query(sql, id, function(err, rows, fields) {
+                console.log(rows.length);
+                if (!err) {
+                    if (rows.length > 0) {
+                        resolve(rows[0].fcm);
+                    } else {
+                        console.log(id + '의 IS_ALARM, IS_LOGOUT 값을 체크해보세요.');
+                        return;
+                    }
+                } else {
+                    console.log(err);
+                    return;
+                }
+            });
+        }).then(function(data) {
+            fcmArr.push(data);
+        });
+
+        var fields = {};
+        fields['notification'] = {};
+        fields['data'] = {};
+
+        fields['registration_ids'] = fcmArr;
+        fields['notification']['title'] = 'Mybaby';
+        fields['notification']['body'] = msg;
+
+        if (board_id == 'growth') {
+            fields['notification']['click_action'] = 'growth_detail'; //액티비티 다이렉트 호출
+        } else {
+            fields['notification']['click_action'] = 'article_detail'; //액티비티 다이렉트 호출
+        }
+        
+        fields['priority'] = 'high';
+        fields['data']['idx'] = idx;
+        fields['data']['writer'] = writer;
+        fields['data']['board_id'] = board_id;
+
+        var config = {
+            method: 'post',
+            url: 'https://fcm.googleapis.com/fcm/send',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'key=' + process.env.FCM_SERVER_KEY
+            },
+            data: JSON.stringify(fields),
+        };
+
+        var result = '';
+
+        await new Promise(function(resolve, reject) {
+            axios(config).then(function (response) {
+                //알림내역저장
+                if (response.data.success == 1) {
+                    // const sql = "INSERT INTO ALARM_tbl SET ID = ?, MESSAGE = ?, WDATE = NOW()";
+                    // db.query(sql, [id, msg]);
+                }
+                //
+                resolve(response.data);
+            }).catch(function (error) {
+                resolve(error);
+            });
+        }).then(function(data) {
+            result = data;
+        });
+        return result;
     }
 
     //null 값은 빈값으로 처리해준다!!

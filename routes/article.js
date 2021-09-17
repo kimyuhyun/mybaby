@@ -467,6 +467,61 @@ router.get('/growth_list', setLog, async function(req, res, next) {
     res.send(arr);
 });
 
+
+router.get('/set_aricle_push/:parent_idx', setLog, async function(req, res, next) {
+    var parent_idx = req.params.parent_idx;
+    var writer = '';
+    var board_id = '';
+    var step = 0;
+    var tmp_idx = 0;
+
+    await new Promise(function(resolve, reject) {
+        var sql = `SELECT parent_idx, id, board_id, step FROM BOARD_tbl WHERE idx = ? `;
+        db.query(sql, parent_idx, function(err, rows, fields) {
+            if (!err) {
+                resolve(rows[0]);
+            } else {
+                console.log(err);
+            }
+        });
+    }).then(function(data) {
+        tmp_idx = data.parent_idx;
+        step = data.step;
+        writer = data.id;
+        board_id = data.board_id;
+    });
+
+    if (step == 2) {
+        //최 상위글을 찾는다!!!
+        parent_idx = tmp_idx;
+
+        console.log(parent_idx);
+
+        await new Promise(function(resolve, reject) {
+            var sql = `SELECT idx, id, board_id, step FROM BOARD_tbl WHERE idx = ? `;
+            db.query(sql, parent_idx, function(err, rows, fields) {
+                if (!err) {
+                    resolve(rows[0]);
+                } else {
+                    console.log(err);
+                }
+            });
+        }).then(function(data) {
+            tmp_idx = data.idx;
+            step = data.step;
+            writer = data.id;
+            board_id = data.board_id;
+        });
+    }
+
+    await new Promise(function(resolve, reject) {
+        var result = utils.sendArticlePush(writer, '등록하신 게시물에 댓글이 등록되었습니다.', parent_idx, writer, board_id);
+        resolve(result);
+    }).then(function(data) {
+        res.send({ data: data});
+    });
+});
+
 router.get('/', setLog, async function(req, res, next) {
 
     // await new Promise(function(resolve, reject) {
