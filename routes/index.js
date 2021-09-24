@@ -48,7 +48,7 @@ async function setLog(req, res, next) {
 
 router.get('/', function(req, res, next) {
     const ip1 = req.headers['x-forwarded-for'];
-    const ip2 = req.connection.remoteAddress;
+    const ip2 = req.socket.remoteAddress;
     res.render('index', {
         title: 'MyBaby api',
         session: `${ip1} : ${ip2}`,
