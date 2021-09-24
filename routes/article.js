@@ -17,7 +17,7 @@ async function setLog(req, res, next) {
                 resolve(rows);
             }
         });
-    }).then(function(data){
+    }).then(function(data) {
         rows = data;
     });
 
@@ -39,7 +39,7 @@ async function setLog(req, res, next) {
 
     //현재 접속자 파일 생성
     var memo = new Date().getTime() + "|S|" + req.baseUrl + req.path;
-    fs.writeFile('./liveuser/'+ip, memo, function(err) {
+    fs.writeFile('./liveuser/' + ip, memo, function(err) {
         console.log(memo);
     });
     //
@@ -519,7 +519,9 @@ router.get('/set_aricle_push/:parent_idx', setLog, async function(req, res, next
         var result = utils.sendArticlePush(dest_id, '등록하신 게시물에 댓글이 등록되었습니다.', parent_idx, writer, board_id);
         resolve(result);
     }).then(function(data) {
-        res.send({ data: data});
+        res.send({
+            data: data
+        });
     });
 });
 

@@ -102,7 +102,12 @@ router.post('/list', userChecking, async function(req, res, next) {
 
 
     if (params.sort != null) {
-        orderby = " ORDER BY " + params.sort[0].field + " " + params.sort[0].direction;
+        orderby = ` ORDER BY `;
+        var tmp = '';
+        for (obj of params.sort) {
+            tmp += `, ${obj.field} ${obj.direction} `;
+        }
+        orderby += tmp.substring(1);
     } else {
         orderby = " ORDER BY idx DESC ";
     }
