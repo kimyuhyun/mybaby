@@ -77,6 +77,7 @@ async function getDataFast(baby_idx) {
             A.etm,
             A.memo,
             A.ml,
+            A.temp,
             A.val
             FROM
             DATA_tbl as A
@@ -155,6 +156,7 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
             A.etm,
             A.memo,
             A.ml,
+            A.temp,
             A.val
             FROM
             DATA_tbl as A
@@ -191,6 +193,7 @@ router.get('/get_data_last_one/:baby_idx', setLog, async function(req, res, next
             A.etm,
             A.memo,
             A.ml,
+            A.temp,
             (SELECT SUM(ml) FROM DATA_tbl WHERE baby_idx = A.baby_idx AND sdate = A.sdate) as ml_sum,
             A.val
             FROM
@@ -259,6 +262,7 @@ router.get('/get_time_line/:baby_idx/:gbn/:start/:end', setLog, async function(r
             A.etm,
             A.memo,
             A.ml,
+            A.temp,
             A.val
             FROM
             DATA_tbl as A
@@ -299,7 +303,7 @@ router.get('/get_health/:baby_idx', setLog, async function(req, res, next) {
     });
 
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT idx, gbn, sdate, stm, edate, etm, ml, memo, val FROM DATA_tbl WHERE baby_idx = ? AND gbn IN('diaper','hosp','temp','drug') ORDER BY sdate DESC, stm DESC`;
+        const sql = `SELECT idx, gbn, sdate, stm, edate, etm, ml, temp, memo, val FROM DATA_tbl WHERE baby_idx = ? AND gbn IN('diaper','hosp','temp','drug') ORDER BY sdate DESC, stm DESC`;
         db.query(sql, baby_idx, function(err, rows, fields) {
             // console.log(rows);
             if (!err) {
