@@ -5,9 +5,12 @@ const fs = require('fs');
 const db = require('../db');
 const utils = require('../Utils');
 const moment = require('moment');
+const requestIp = require('request-ip');
 
 async function setLog(req, res, next) {
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    // const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const ip = requestIp.getClientIp(req);
+
     var rows;
     await new Promise(function(resolve, reject) {
         var sql = `SELECT visit FROM ANALYZER_tbl WHERE ip = ? ORDER BY idx DESC LIMIT 0, 1`;
@@ -318,6 +321,7 @@ router.get('/get_inoculation_memo/:pid', setLog, async function(req, res, next) 
 
 router.get('/', setLog, async function(req, res, next) {
 
+
     // await new Promise(function(resolve, reject) {
     //     var sql = ``;
     //     db.query(sql, function(err, rows, fields) {
@@ -332,7 +336,10 @@ router.get('/', setLog, async function(req, res, next) {
     //
     // });
 
-    res.send('api');
+    const ip1 = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const ip2 = requestIp.getClientIp(req);
+
+    res.send(`${ip1} : ${ip2}`);
 });
 
 
