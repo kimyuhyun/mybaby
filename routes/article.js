@@ -476,6 +476,8 @@ router.get('/set_aricle_push/:parent_idx', setLog, async function(req, res, next
     var step = 0;
     var tmp_idx = 0;
 
+    //항상 상위 댓글 작성자에게 푸시가 날라간다!
+
     await new Promise(function(resolve, reject) {
         var sql = `SELECT parent_idx, id, board_id, step FROM BOARD_tbl WHERE idx = ? `;
         db.query(sql, parent_idx, function(err, rows, fields) {

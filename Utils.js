@@ -147,7 +147,7 @@ class Utils {
         fields['data'] = {};
 
         fields['registration_ids'] = fcmArr;
-        fields['notification']['title'] = 'Mybaby';
+        fields['notification']['title'] = '마이베이비';
         fields['notification']['body'] = msg;
 
         if (board_id == 'growth') {
@@ -155,7 +155,7 @@ class Utils {
         } else {
             fields['notification']['click_action'] = 'article_detail'; //액티비티 다이렉트 호출
         }
-        
+
         fields['priority'] = 'high';
         fields['data']['idx'] = idx;
         fields['data']['writer'] = writer;
