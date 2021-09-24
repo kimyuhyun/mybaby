@@ -47,10 +47,11 @@ async function setLog(req, res, next) {
 }
 
 router.get('/', function(req, res, next) {
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const ip1 = req.headers['x-forwarded-for'];
+    const ip2 = req.connection.remoteAddress;
     res.render('index', {
         title: 'MyBaby api',
-        session: `${ip}`,
+        session: `${ip1} : ${ip2}`,
         mode: process.env.NODE_ENV,
     });
 });
