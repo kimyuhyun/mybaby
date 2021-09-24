@@ -122,25 +122,41 @@ class Utils {
 
     async sendArticlePush(id, msg, idx, writer, board_id) {
         var fcmArr = [];
+        var resultObj = {};
         await new Promise(function(resolve, reject) {
             var sql = "SELECT fcm FROM MEMB_tbl WHERE id = ? AND IS_push = 1 AND is_logout = 0"
             db.query(sql, id, function(err, rows, fields) {
                 console.log(rows.length);
                 if (!err) {
                     if (rows.length > 0) {
-                        resolve(rows[0].fcm);
+                        resolve({
+                            code: 1,
+                            data: rows[0].fcm,
+                        });
                     } else {
-                        console.log(id + '의 IS_ALARM, IS_LOGOUT 값을 체크해보세요.');
-                        return;
+                        resolve({
+                            code: 0,
+                            data: `${id} 의 IS_ALARM, IS_LOGOUT 값을 체크해보세요.`,
+                        });
                     }
                 } else {
                     console.log(err);
-                    return;
+                    resolve({
+                        code: 0,
+                        data: err,
+                    });
                 }
             });
         }).then(function(data) {
-            fcmArr.push(data);
+            resultObj = data;
         });
+
+        if (resultObj.code == 1) {
+            fcmArr.push(resultObj.data);
+        } else {
+            return resultObj.data;
+        }
+
 
         var fields = {};
         fields['notification'] = {};
