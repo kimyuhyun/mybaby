@@ -8,7 +8,7 @@ const moment = require('moment');
 
 
 async function setLog(req, res, next) {
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const ip = req.sessionID;
     var rows;
     await new Promise(function(resolve, reject) {
         var sql = `SELECT visit FROM ANALYZER_tbl WHERE ip = ? ORDER BY idx DESC LIMIT 0, 1`;

@@ -8,8 +8,7 @@ const moment = require('moment');
 const requestIp = require('request-ip');
 
 async function setLog(req, res, next) {
-    // const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const ip = requestIp.getClientIp(req);
+    const ip = req.sessionID;
 
     var rows;
     await new Promise(function(resolve, reject) {
@@ -336,10 +335,8 @@ router.get('/', setLog, async function(req, res, next) {
     //
     // });
 
-    const ip1 = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const ip2 = requestIp.getClientIp(req);
 
-    res.send(`${ip1} : ${ip2}`);
+    res.send('api');
 });
 
 
