@@ -226,6 +226,8 @@ class Utils {
         }
         return arr;
     }
+
+    
 }
 
 module.exports = new Utils();

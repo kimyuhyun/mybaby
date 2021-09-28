@@ -54,7 +54,24 @@ async function getDataFast(baby_idx) {
     var arr = {};
 
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT sdate, SUM(ml) as ml FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? GROUP BY sdate ORDER BY sdate DESC`;
+        const sql = `
+            SELECT
+            A.sdate,
+            (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'pmilk') as pmilk_ml,
+            (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'bmilk') as bmilk_ml,
+            (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'milk') as milk_ml,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'diaper') as diaper_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'sleep') as sleep_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'babyfood') as babyfood_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'snack') as snack_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'drug') as drug_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'water') as water_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'play') as play_cnt
+            FROM DATA_tbl as A
+            WHERE A.baby_idx = ?
+            AND A.sdate BETWEEN ? AND ?
+            GROUP BY A.sdate ORDER BY A.sdate DESC
+        `;
         db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
             if (!err) {
                 resolve(rows);
@@ -63,7 +80,17 @@ async function getDataFast(baby_idx) {
             }
         });
     }).then(function(data) {
-        arr.header = utils.nvl(data);
+        var tmpArr = utils.nvl(data);
+
+        for (var rows of tmpArr) {
+            for (var i in rows) {
+                if (rows[i] == '') {
+                    rows[i] = 0;
+                }
+            }
+        }
+
+        arr.header = tmpArr;
     });
 
     await new Promise(function(resolve, reject) {
@@ -124,6 +151,9 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
         end = tmpArr[0].sdate;
     }
 
+    /**
+    * 데이터가 50개 이상이면 getDataFast로 불러온다!
+    */
     if (tmpArr.length > 50) {
         arr = await getDataFast(baby_idx);
         res.send(arr);
@@ -131,9 +161,25 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
     }
 
 
-
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT sdate, SUM(ml) as ml FROM DATA_tbl WHERE baby_idx = ? AND sdate BETWEEN ? AND ? GROUP BY sdate ORDER BY sdate DESC`;
+        const sql = `
+            SELECT
+            A.sdate,
+            (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'pmilk') as pmilk_ml,
+            (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'bmilk') as bmilk_ml,
+            (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'milk') as milk_ml,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'diaper') as diaper_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'sleep') as sleep_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'babyfood') as babyfood_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'snack') as snack_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'drug') as drug_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'water') as water_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'play') as play_cnt
+            FROM DATA_tbl as A
+            WHERE A.baby_idx = ?
+            AND A.sdate BETWEEN ? AND ?
+            GROUP BY A.sdate ORDER BY A.sdate DESC
+        `;
         db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
             if (!err) {
                 resolve(rows);
@@ -142,7 +188,18 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
             }
         });
     }).then(function(data) {
-        arr.header = utils.nvl(data);
+        var tmpArr = utils.nvl(data);
+
+
+        for (var rows of tmpArr) {
+            for (var i in rows) {
+                if (rows[i] == '') {
+                    rows[i] = 0;
+                }
+            }
+        }
+
+        arr.header = tmpArr;
     });
 
     await new Promise(function(resolve, reject) {
@@ -194,8 +251,17 @@ router.get('/get_data_last_one/:baby_idx', setLog, async function(req, res, next
             A.memo,
             A.ml,
             A.temp,
-            (SELECT SUM(ml) FROM DATA_tbl WHERE baby_idx = A.baby_idx AND sdate = A.sdate) as ml_sum,
-            A.val
+            A.val,
+            (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'pmilk') as pmilk_ml,
+            (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'bmilk') as bmilk_ml,
+            (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'milk') as milk_ml,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'diaper') as diaper_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'sleep') as sleep_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'babyfood') as babyfood_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'snack') as snack_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'drug') as drug_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'water') as water_cnt,
+            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'play') as play_cnt
             FROM
             DATA_tbl as A
             WHERE A.baby_idx = ?
