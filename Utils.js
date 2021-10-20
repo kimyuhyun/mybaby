@@ -3,6 +3,7 @@ const db = require('./db');
 const requestIp = require('request-ip');
 const axios = require('axios');
 const crypto = require('crypto');
+const moment = require('moment');
 
 class Utils {
     setSaveMenu(req) {
@@ -227,7 +228,52 @@ class Utils {
         return arr;
     }
 
-    
+    //수면시간 가져오기!!
+    async getSleepCount(baby_idx, start, end) {
+        var rtn_value = '';
+        var cnt = 0;
+        var ttl_time = 0;
+
+        await new Promise(function(resolve, reject) {
+            const sql = `SELECT COUNT(*) as cnt FROM DATA_tbl WHERE gbn = 'sleep' AND baby_idx = ? AND sdate BETWEEN ? AND ?`;
+            db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
+                if (!err) {
+                    resolve(rows[0]);
+                } else {
+                    console.log(err);
+                }
+            });
+        }).then(function(data) {
+            cnt = data.cnt;
+        });
+
+        await new Promise(function(resolve, reject) {
+            const sql = `SELECT sdate, stm, etm FROM DATA_tbl WHERE gbn = 'sleep' AND etm != '' AND baby_idx = ? AND sdate BETWEEN ? AND ? ORDER BY sdate ASC`;
+            db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
+                if (!err) {
+                    resolve(rows);
+                } else {
+                    console.log(err);
+                }
+            });
+        }).then(function(data) {
+            for (var obj of data) {
+                const stm = moment(obj.sdate + ' ' + obj.stm);
+                const etm = moment(obj.sdate + ' ' + obj.etm);
+                const diff = etm.diff(stm, 'minute');
+                if (diff > 0) {
+                    ttl_time += etm.diff(stm, 'minute');
+                }
+            }
+        });
+
+        var h = ttl_time / 60;
+        var m = ttl_time % 60;
+
+        rtn_value = cnt + `(${h.toFixed(0)}h${m.toFixed(0)}m)`;
+
+        return rtn_value;
+    }
 }
 
 module.exports = new Utils();

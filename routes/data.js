@@ -61,7 +61,6 @@ async function getDataFast(baby_idx) {
             (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'bmilk') as bmilk_ml,
             (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'milk') as milk_ml,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'diaper') as diaper_cnt,
-            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'sleep') as sleep_cnt,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'babyfood') as babyfood_cnt,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'snack') as snack_cnt,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'drug') as drug_cnt,
@@ -79,15 +78,18 @@ async function getDataFast(baby_idx) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
+    }).then(async function(data) {
         var tmpArr = utils.nvl(data);
-
         for (var rows of tmpArr) {
             for (var i in rows) {
                 if (rows[i] == '') {
                     rows[i] = 0;
                 }
             }
+
+            //수면시간 가져오기!!
+            rows.sleep_cnt = await utils.getSleepCount(baby_idx, rows.sdate, rows.sdate);
+
         }
 
         arr.header = tmpArr;
@@ -169,7 +171,6 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
             (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'bmilk') as bmilk_ml,
             (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'milk') as milk_ml,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'diaper') as diaper_cnt,
-            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'sleep') as sleep_cnt,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'babyfood') as babyfood_cnt,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'snack') as snack_cnt,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'drug') as drug_cnt,
@@ -187,16 +188,17 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
+    }).then(async function(data) {
         var tmpArr = utils.nvl(data);
-
-
         for (var rows of tmpArr) {
             for (var i in rows) {
                 if (rows[i] == '') {
                     rows[i] = 0;
                 }
             }
+
+            //수면시간 가져오기!!
+            rows.sleep_cnt = await utils.getSleepCount(baby_idx, rows.sdate, rows.sdate);
         }
 
         arr.header = tmpArr;
@@ -256,7 +258,6 @@ router.get('/get_data_last_one/:baby_idx', setLog, async function(req, res, next
             (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'bmilk') as bmilk_ml,
             (SELECT SUM(ml) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'milk') as milk_ml,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'diaper') as diaper_cnt,
-            (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'sleep') as sleep_cnt,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'babyfood') as babyfood_cnt,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'snack') as snack_cnt,
             (SELECT COUNT(*) FROM DATA_tbl WHERE sdate = A.sdate AND baby_idx = A.baby_idx AND gbn = 'drug') as drug_cnt,
@@ -274,8 +275,11 @@ router.get('/get_data_last_one/:baby_idx', setLog, async function(req, res, next
                 console.log(err);
             }
         });
-    }).then(function(data) {
+    }).then(async function(data) {
         obj = utils.nvl(data);
+
+        //수면시간 가져오기!!
+        obj.sleep_cnt = await utils.getSleepCount(baby_idx, obj.sdate, obj.sdate);
     });
 
     res.send(obj);
@@ -352,11 +356,11 @@ router.get('/get_time_line/:baby_idx/:gbn/:start/:end', setLog, async function(r
 
 router.get('/get_health/:baby_idx', setLog, async function(req, res, next) {
     const baby_idx = req.params.baby_idx;
-    //diaper, hosp, temp, drug
+    //'diaper','hosp','temp','drug','sleep'
     var arr = {};
 
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT sdate, COUNT(*) as cnt FROM DATA_tbl WHERE baby_idx = ? AND gbn IN('diaper','hosp','temp','drug') GROUP BY sdate ORDER BY sdate DESC`;
+        const sql = `SELECT sdate, COUNT(*) as cnt FROM DATA_tbl WHERE baby_idx = ? AND gbn IN('diaper','hosp','temp','drug','sleep') GROUP BY sdate ORDER BY sdate DESC`;
         db.query(sql, baby_idx, function(err, rows, fields) {
             if (!err) {
                 resolve(rows);
@@ -369,7 +373,7 @@ router.get('/get_health/:baby_idx', setLog, async function(req, res, next) {
     });
 
     await new Promise(function(resolve, reject) {
-        const sql = `SELECT idx, gbn, sdate, stm, edate, etm, ml, temp, memo, val FROM DATA_tbl WHERE baby_idx = ? AND gbn IN('diaper','hosp','temp','drug') ORDER BY sdate DESC, stm DESC`;
+        const sql = `SELECT idx, gbn, sdate, stm, edate, etm, ml, temp, memo, val FROM DATA_tbl WHERE baby_idx = ? AND gbn IN('diaper','hosp','temp','drug','sleep') ORDER BY sdate DESC, stm DESC`;
         db.query(sql, baby_idx, function(err, rows, fields) {
             // console.log(rows);
             if (!err) {

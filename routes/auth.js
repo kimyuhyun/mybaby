@@ -232,6 +232,7 @@ router.get('/get_invite_code/:pid', setLog, async function(req, res, next) {
         }
     });
 
+    
     if (cnt == 0) {
         var shortid = require('shortid');
         code = shortid.generate();

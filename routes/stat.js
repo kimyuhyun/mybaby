@@ -83,8 +83,15 @@ router.get('/stat_list/:baby_idx/:start/:end', setLog, async function(req, res, 
                 return;
             }
         });
-    }).then(function(data) {
+    }).then(async function(data) {
         arr = utils.nvl(data);
+
+        for (o of arr) {
+            if (o.gbn == 'sleep') {
+                //수면시간 가져오기!!
+                o.cnt = await utils.getSleepCount(baby_idx, start, end);
+            }
+        }
     });
     res.send(arr);
 });
