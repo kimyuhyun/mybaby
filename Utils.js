@@ -270,6 +270,10 @@ class Utils {
         var h = ttl_time / 60;
         var m = ttl_time % 60;
 
+        if (h < 1) {
+            h = 0;
+        }
+
         rtn_value = cnt + `(${h.toFixed(0)}h${m.toFixed(0)}m)`;
 
         return rtn_value;
