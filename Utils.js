@@ -252,7 +252,7 @@ class Utils {
         });
 
         await new Promise(function(resolve, reject) {
-            const sql = `SELECT idx, sdate, stm, edate, etm FROM DATA_tbl WHERE gbn = 'sleep' AND etm != '' AND baby_idx = ? AND sdate BETWEEN ? AND ? ORDER BY sdate ASC`;
+            const sql = `SELECT idx, sdate, stm, edate, etm FROM DATA_tbl WHERE gbn = 'sleep' AND etm != '' AND baby_idx = ? AND sdate BETWEEN ? AND ? ORDER BY sdate ASC, idx DESC`;
             db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
                 if (!err) {
                     resolve(rows);
@@ -278,9 +278,9 @@ class Utils {
             }
         });
 
-        var h = ttl_time / 60;
+        var h = parseInt(ttl_time / 60);
         var m = ttl_time % 60;
-        
+
 
         rtn_value = cnt + `(${h.toFixed(0)}h${m.toFixed(0)}m)`;
 
