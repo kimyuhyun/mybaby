@@ -88,7 +88,7 @@ async function getDataFast(baby_idx) {
             }
 
             //수면시간 가져오기!!
-            rows.sleep_cnt = await utils.getSleepCount(baby_idx, rows.sdate, rows.sdate);
+            rows.sleep_cnt = await utils.getSleepCount(baby_idx, rows.sdate, rows.edate);
 
         }
 
@@ -198,7 +198,7 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
             }
 
             //수면시간 가져오기!!
-            rows.sleep_cnt = await utils.getSleepCount(baby_idx, rows.sdate, rows.sdate);
+            rows.sleep_cnt = await utils.getSleepCount(baby_idx, rows.sdate, rows.edate);
         }
 
         arr.header = tmpArr;
@@ -279,7 +279,7 @@ router.get('/get_data_last_one/:baby_idx', setLog, async function(req, res, next
         obj = utils.nvl(data);
 
         //수면시간 가져오기!!
-        obj.sleep_cnt = await utils.getSleepCount(baby_idx, obj.sdate, obj.sdate);
+        obj.sleep_cnt = await utils.getSleepCount(baby_idx, obj.sdate, obj.edate);
     });
 
     res.send(obj);

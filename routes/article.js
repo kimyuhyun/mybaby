@@ -467,6 +467,58 @@ router.get('/growth_list', setLog, async function(req, res, next) {
     res.send(arr);
 });
 
+router.get('/growth_gallery', setLog, async function(req, res, next) {
+    const pid = req.query.pid;
+    const baby_idx = req.query.baby_idx;
+    var page = req.query.page;
+
+    // page = page * 21;
+
+    var arr = [];
+
+    await new Promise(function(resolve, reject) {
+        const sql = `
+            SELECT
+            filename0,
+            filename1,
+            filename2,
+            filename3,
+            filename4,
+            filename5,
+            filename6,
+            filename7,
+            filename8,
+            filename9
+            FROM BOARD_tbl
+            WHERE board_id = 'growth'
+            AND step = 1
+            AND id = ?
+            AND baby_idx = ?
+            ORDER BY created DESC
+            
+        `;
+        db.query(sql, [pid, baby_idx], function(err, rows, fields) {
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                resolve(err);
+            }
+        });
+    }).then(function(data) {
+        for (o of data) {
+            for (var i = 0; i < 10; i++) {
+                var url = eval("o.filename" + i);
+                if (url != '') {
+                    arr.push(url);
+                }
+            }
+        }
+    });
+    res.send(arr);
+});
+
+
 
 router.get('/set_aricle_push/:parent_idx', setLog, async function(req, res, next) {
     var parent_idx = req.params.parent_idx;

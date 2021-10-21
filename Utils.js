@@ -230,6 +230,10 @@ class Utils {
 
     //수면시간 가져오기!!
     async getSleepCount(baby_idx, start, end) {
+        if (!end) {
+            end = start;
+        }
+
         var rtn_value = '';
         var cnt = 0;
         var ttl_time = 0;
@@ -248,7 +252,7 @@ class Utils {
         });
 
         await new Promise(function(resolve, reject) {
-            const sql = `SELECT sdate, stm, etm FROM DATA_tbl WHERE gbn = 'sleep' AND etm != '' AND baby_idx = ? AND sdate BETWEEN ? AND ? ORDER BY sdate ASC`;
+            const sql = `SELECT idx, sdate, stm, edate, etm FROM DATA_tbl WHERE gbn = 'sleep' AND etm != '' AND baby_idx = ? AND sdate BETWEEN ? AND ? ORDER BY sdate ASC`;
             db.query(sql, [baby_idx, start, end], function(err, rows, fields) {
                 if (!err) {
                     resolve(rows);
@@ -258,21 +262,25 @@ class Utils {
             });
         }).then(function(data) {
             for (var obj of data) {
-                const stm = moment(obj.sdate + ' ' + obj.stm);
-                const etm = moment(obj.sdate + ' ' + obj.etm);
-                const diff = etm.diff(stm, 'minute');
-                if (diff > 0) {
-                    ttl_time += etm.diff(stm, 'minute');
+                if (!obj.edate) {
+                    obj.edate = obj.sdate;
                 }
+                const stm = moment(obj.sdate + ' ' + obj.stm);
+                const etm = moment(obj.edate + ' ' + obj.etm);
+                const diff = etm.diff(stm, 'minute');
+                console.log(obj.idx, diff);
+                if (diff < 0) {
+                    ttl_time += diff * -1;
+                } else {
+                    ttl_time += diff;
+                }
+
             }
         });
 
         var h = ttl_time / 60;
         var m = ttl_time % 60;
-
-        if (h < 1) {
-            h = 0;
-        }
+        
 
         rtn_value = cnt + `(${h.toFixed(0)}h${m.toFixed(0)}m)`;
 
