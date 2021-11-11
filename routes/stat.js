@@ -154,6 +154,7 @@ router.get('/ml_graph/:baby_idx/:start/:end', setLog, async function(req, res, n
             }
         }
     }
+    console.log(gbnObj);
     res.send(gbnObj);
 });
 

@@ -309,6 +309,32 @@ router.post('/set_baby_info', setLog, async function(req, res, next) {
 
 });
 
+
+router.get('/get_my_family_list/:baby_idx', setLog, async function(req, res, next) {
+    let baby_idx = req.params.baby_idx;
+
+    // var arr = [];
+    // await new Promise(function(resolve, reject) {
+    //     const sql = ``;
+    //     db.query(sql, function(err, rows, fields) {
+    //         console.log(rows);
+    //         if (!err) {
+    //             resolve(rows);
+    //         } else {
+    //             console.log(err);
+    //             res.send(err);
+    //             return;
+    //         }
+    //     });
+    // }).then(function(data) {
+    //     arr = utils.nvl(data);
+    // });
+    // res.send(arr);
+
+    res.send('baby');
+});
+
+
 router.get('/', setLog, async function(req, res, next) {
 
     // var arr = [];
