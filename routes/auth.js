@@ -192,19 +192,21 @@ router.get('/set_invite_code/:code/:id', setLog, async function(req, res, next) 
 
 
     //pid를 업데이트
-    await new Promise(function(resolve, reject) {
-        const sql = `UPDATE MEMB_tbl set pid = ? WHERE id = ?`;
-        db.query(sql, [pid, id], function(err, rows, fields) {
-            // console.log(rows);
-            if (!err) {
-                resolve(rows);
-            } else {
-                console.log(err);
-                res.send(err);
-                return;
-            }
-        });
-    }).then();
+    if (pid != '') {
+        await new Promise(function(resolve, reject) {
+            const sql = `UPDATE MEMB_tbl set pid = ? WHERE id = ?`;
+            db.query(sql, [pid, id], function(err, rows, fields) {
+                // console.log(rows);
+                if (!err) {
+                    resolve(rows);
+                } else {
+                    console.log(err);
+                    res.send(err);
+                    return;
+                }
+            });
+        }).then();
+    }
     //
 
     //baby 정보 불러오기!
