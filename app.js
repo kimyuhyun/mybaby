@@ -13,6 +13,7 @@ const db = require('./db');
 const indexRouter = require('./routes/index');
 const adminRouter = require('./routes/admin');
 const crudRouter = require('./routes/crud');
+const apiCrudRouter = require('./routes/api_crud');
 const analyzerRouter = require('./routes/analyzer');
 const apiRouter = require('./routes/api');
 const articleRouter = require('./routes/article');
@@ -20,6 +21,7 @@ const authRouter = require('./routes/auth');
 const dataRouter = require('./routes/data');
 const babyRouter = require('./routes/baby');
 const statRouter = require('./routes/stat');
+const pushRouter = require('./routes/push');
 
 const app = express();
 
@@ -56,6 +58,7 @@ app.use('/data', express.static('data'));
 app.use('/', indexRouter);
 app.use('/admin', adminRouter);
 app.use('/crud', crudRouter);
+app.use('/api_crud', apiCrudRouter);
 app.use('/analyzer', analyzerRouter);
 app.use('/api', apiRouter);
 app.use('/article', articleRouter);
@@ -63,6 +66,7 @@ app.use('/auth', authRouter);
 app.use('/data', dataRouter);
 app.use('/baby', babyRouter);
 app.use('/stat', statRouter);
+app.use('/push', pushRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

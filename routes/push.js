@@ -47,28 +47,28 @@ async function setLog(req, res, next) {
 }
 
 
-
+// http://localhost:3001/push?id=108542488160175627490&msg=TEST&menu_flag=1
 router.get('/', setLog, async function(req, res, next) {
+    let id = req.query.id;
+    let msg = req.query.msg;
+    let menu_flag = req.query.menu_flag;
 
-    // var arr = [];
-    // await new Promise(function(resolve, reject) {
-    //     const sql = ``;
-    //     db.query(sql, function(err, rows, fields) {
-    //         console.log(rows);
-    //         if (!err) {
-    //             resolve(rows);
-    //         } else {
-    //             console.log(err);
-    //             res.send(err);
-    //             return;
-    //         }
-    //     });
-    // }).then(async function(data) {
-    //     arr = await utils.nvl(data);
-    // });
-    // res.send(arr);
+    let result = await utils.sendPush(id, msg, menu_flag);
 
-    res.send('api');
+    res.send(result);
+});
+
+// http://localhost:3001/push/article?id=108542488160175627490&msg=댓글이달렸다!!!!&idx=142&writer=admin&board_id=free
+router.get('/article', setLog, async function(req, res, next) {
+    let id = req.query.id;
+    let msg = req.query.msg;
+    let idx = req.query.idx;
+    let writer = req.query.writer;
+    let board_id = req.query.board_id;
+
+    let result = await utils.sendArticlePush(id, msg, idx, writer, board_id);
+
+    res.send(result);
 });
 
 

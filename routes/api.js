@@ -113,8 +113,8 @@ router.get('/get_gbn/:id', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        arr = utils.nvl(data);
+    }).then(async function(data) {
+        arr = await utils.nvl(data);
     });
     res.send(arr);
 });
@@ -178,8 +178,8 @@ router.post('/set_qmemo', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        obj = utils.nvl(data);
+    }).then(async function(data) {
+        obj = await utils.nvl(data);
     });
     res.send(obj);
 });
@@ -196,8 +196,8 @@ router.get('/get_qmemo/:id', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        obj = utils.nvl(data);
+    }).then(async function(data) {
+        obj = await utils.nvl(data);
     });
     res.send(obj);
 });
@@ -220,8 +220,8 @@ router.get('/get_inoculation_all/:pid', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        tmpArr = utils.nvl(data);
+    }).then(async function(data) {
+        tmpArr = await utils.nvl(data);
     });
 
     var rows = [];
@@ -240,8 +240,8 @@ router.get('/get_inoculation_all/:pid', setLog, async function(req, res, next) {
                     console.log(err);
                 }
             });
-        }).then(function(data) {
-            rows = utils.nvl(data);
+        }).then(async function(data) {
+            rows = await utils.nvl(data);
             for (row of rows) {
                 row.group = i;
                 row.sdate = obj.sdate;
@@ -284,8 +284,8 @@ router.get('/get_inoculation_memo/:pid', setLog, async function(req, res, next) 
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        tmpArr = utils.nvl(data);
+    }).then(async function(data) {
+        tmpArr = await utils.nvl(data);
     });
 
     var rows = [];
@@ -304,8 +304,8 @@ router.get('/get_inoculation_memo/:pid', setLog, async function(req, res, next) 
                     console.log(err);
                 }
             });
-        }).then(function(data) {
-            rows = utils.nvl(data);
+        }).then(async function(data) {
+            rows = await utils.nvl(data);
             for (row of rows) {
                 row.group = i;
                 row.sdate = obj.sdate;

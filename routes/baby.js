@@ -74,8 +74,8 @@ router.get('/get_baby/:pid/:id', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        tmpArr = utils.nvl(data);
+    }).then(async function(data) {
+        tmpArr = await utils.nvl(data);
     });
 
     //나의 기본 baby 가져오기!!
@@ -162,8 +162,8 @@ router.get('/get_baby_detail/:idx/:id', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        arr = utils.nvl(data);
+    }).then(async function(data) {
+        arr = await utils.nvl(data);
     });
 
     arr.relation = relation;
@@ -326,8 +326,8 @@ router.get('/get_my_family_list/:baby_idx', setLog, async function(req, res, nex
     //             return;
     //         }
     //     });
-    // }).then(function(data) {
-    //     arr = utils.nvl(data);
+    // }).then(async function(data) {
+    //     arr = await utils.nvl(data);
     // });
     // res.send(arr);
 
@@ -350,8 +350,8 @@ router.get('/', setLog, async function(req, res, next) {
     //             return;
     //         }
     //     });
-    // }).then(function(data) {
-    //     arr = utils.nvl(data);
+    // }).then(async function(data) {
+    //     arr = await utils.nvl(data);
     // });
     // res.send(arr);
 

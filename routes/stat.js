@@ -62,8 +62,8 @@ async function setLog(req, res, next) {
 //                 return;
 //             }
 //         });
-//     }).then(function(data) {
-//         arr = utils.nvl(data);
+//     }).then(async function(data) {
+//         arr = await utils.nvl(data);
 //     });
 //     res.send(arr);
 // });
@@ -84,7 +84,7 @@ router.get('/stat_list/:baby_idx/:start/:end', setLog, async function(req, res, 
             }
         });
     }).then(async function(data) {
-        arr = utils.nvl(data);
+        arr = await utils.nvl(data);
 
         for (o of arr) {
             if (o.gbn == 'sleep') {
@@ -125,9 +125,9 @@ router.get('/ml_graph/:baby_idx/:start/:end', setLog, async function(req, res, n
                     return;
                 }
             });
-        }).then(function(data) {
+        }).then(async function(data) {
             hashMap = new HashMap();
-            for (obj of utils.nvl(data)) {
+            for (obj of await utils.nvl(data)) {
                 hashMap.set(moment(obj.sdate).format("DD"), obj.ml);
             }
         });
@@ -174,8 +174,8 @@ router.get('/action_graph/:baby_idx/:start/:end', setLog, async function(req, re
                 return;
             }
         });
-    }).then(function(data) {
-        arr = utils.nvl(data);
+    }).then(async function(data) {
+        arr = await utils.nvl(data);
     });
     res.send(arr);
 });
@@ -196,8 +196,8 @@ router.get('/growth_graph/:baby_idx', setLog, async function(req, res, next) {
                 return;
             }
         });
-    }).then(function(data) {
-        arr = utils.nvl(data);
+    }).then(async function(data) {
+        arr = await utils.nvl(data);
     });
     res.send(arr);
 });
@@ -217,8 +217,8 @@ router.get('/', setLog, async function(req, res, next) {
     //             return;
     //         }
     //     });
-    // }).then(function(data) {
-    //     arr = utils.nvl(data);
+    // }).then(async function(data) {
+    //     arr = await utils.nvl(data);
     // });
     // res.send(arr);
 

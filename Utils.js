@@ -60,36 +60,47 @@ class Utils {
 
     async sendPush(id, msg, menu_flag) {
         var fcmArr = [];
+        var rs = {};
         await new Promise(function(resolve, reject) {
-            var sql = "SELECT fcm FROM MEMB_tbl WHERE id = ? AND IS_push = 1 AND is_logout = 0"
+            var sql = "SELECT fcm FROM MEMB_tbl WHERE id = ? AND is_push = 1 AND is_logout = 0"
             db.query(sql, id, function(err, rows, fields) {
                 console.log(rows.length);
                 if (!err) {
                     if (rows.length > 0) {
-                        resolve(rows[0].fcm);
+                        resolve({ code: 1, msg: rows});
                     } else {
                         console.log(id + '의 IS_ALARM, IS_LOGOUT 값을 체크해보세요.');
-                        return;
+                        resolve({ code: 0, msg: id + '의 IS_ALARM, IS_LOGOUT 값을 체크해보세요.'});
                     }
                 } else {
-                    console.log(err);
-                    return;
+                    resolve({ code: 0, msg: err});
                 }
             });
         }).then(function(data) {
-            fcmArr.push(data);
+            rs = data;
         });
 
-        var fields = {};
-        fields['notification'] = {};
-        fields['data'] = {};
+        if (rs.code == 0) {
+            return rs;
+        } else {
+            for (var obj of rs.msg) {
+                fcmArr.push(obj.fcm);
+            }
+        }
 
-        fields['registration_ids'] = fcmArr;
-        fields['notification']['title'] = 'Mybaby';
-        fields['notification']['body'] = msg;
-        // fields['notification']['click_action'] = 'NOTI_CLICK'; //액티비티 다이렉트 호출
-        fields['priority'] = 'high';
-        fields['data']['menu_flag'] = menu_flag;               //키값은 대문자 안먹음..
+        var fields = {};
+        fields.priority = 'high';
+        fields.registration_ids = fcmArr;
+
+        fields.data = {};
+        fields.data.menu_flag = menu_flag;               //키값은 대문자 안먹음..
+        fields.data.title = 'Mybaby';
+        fields.data.body = msg;
+
+        // fields.notification = {};
+        // fields.notification.title = 'Mybaby';
+        // fields.notification.body = msg;
+        // fields.notification.click_action = 'noti_click'; //액티비티 다이렉트 호출
 
         var config = {
             method: 'post',
@@ -102,81 +113,66 @@ class Utils {
         };
 
         var result = '';
-
-        await new Promise(function(resolve, reject) {
-            axios(config).then(function (response) {
-                //알림내역저장
-                if (response.data.success == 1) {
-                    // const sql = "INSERT INTO ALARM_tbl SET ID = ?, MESSAGE = ?, WDATE = NOW()";
-                    // db.query(sql, [id, msg]);
+        await axios(config).then(function (response) {
+            //알림내역저장
+            if (response.data.success == 1) {
+                for (var targetId of fcmArr) {
+                    const sql = "INSERT INTO PUSH_HISTORY_tbl SET target_id = ?, message = ?, created = NOW()";
+                    db.query(sql, [targetId, fields.data.body]);
                 }
-                //
-                resolve(response.data);
-            }).catch(function (error) {
-                resolve(error);
-            });
-        }).then(function(data) {
-            result = data;
+            }
+            //
+            result = response.data;
+        }).catch(function (error) {
+            result = error;
         });
+
+        // console.log('result', result);
+
         return result;
     }
 
     async sendArticlePush(id, msg, idx, writer, board_id) {
         var fcmArr = [];
-        var resultObj = {};
+        var rs = {};
         await new Promise(function(resolve, reject) {
-            var sql = "SELECT fcm FROM MEMB_tbl WHERE id = ? AND IS_push = 1 AND is_logout = 0"
+            var sql = "SELECT fcm FROM MEMB_tbl WHERE id = ? AND is_push = 1 AND is_logout = 0"
             db.query(sql, id, function(err, rows, fields) {
                 console.log(rows.length);
                 if (!err) {
                     if (rows.length > 0) {
-                        resolve({
-                            code: 1,
-                            data: rows[0].fcm,
-                        });
+                        resolve({ code: 1, msg: rows});
                     } else {
-                        resolve({
-                            code: 0,
-                            data: `${id} 의 IS_ALARM, IS_LOGOUT 값을 체크해보세요.`,
-                        });
+                        console.log(id + '의 IS_ALARM, IS_LOGOUT 값을 체크해보세요.');
+                        resolve({ code: 0, msg: id + '의 IS_ALARM, IS_LOGOUT 값을 체크해보세요.'});
                     }
                 } else {
-                    console.log(err);
-                    resolve({
-                        code: 0,
-                        data: err,
-                    });
+                    resolve({ code: 0, msg: err});
                 }
             });
         }).then(function(data) {
-            resultObj = data;
+            rs = data;
         });
 
-        if (resultObj.code == 1) {
-            fcmArr.push(resultObj.data);
+        if (rs.code == 0) {
+            return rs;
         } else {
-            return resultObj.data;
+            for (var obj of rs.msg) {
+                fcmArr.push(obj.fcm);
+            }
         }
-
 
         var fields = {};
-        fields['notification'] = {};
-        fields['data'] = {};
+        fields.priority = 'high';
+        fields.registration_ids = fcmArr;
 
-        fields['registration_ids'] = fcmArr;
-        fields['notification']['title'] = '마이베이비';
-        fields['notification']['body'] = msg;
+        fields.data = {};
+        fields.data.title = 'Mybaby';
+        fields.data.body = msg;
+        fields.data.idx = idx;
+        fields.data.writer = writer;
+        fields.data.board_id = board_id;
 
-        if (board_id == 'growth') {
-            fields['notification']['click_action'] = 'growth_detail'; //액티비티 다이렉트 호출
-        } else {
-            fields['notification']['click_action'] = 'article_detail'; //액티비티 다이렉트 호출
-        }
-
-        fields['priority'] = 'high';
-        fields['data']['idx'] = idx;
-        fields['data']['writer'] = writer;
-        fields['data']['board_id'] = board_id;
 
         var config = {
             method: 'post',
@@ -189,27 +185,31 @@ class Utils {
         };
 
         var result = '';
-
-        await new Promise(function(resolve, reject) {
-            axios(config).then(function (response) {
-                //알림내역저장
-                if (response.data.success == 1) {
-                    // const sql = "INSERT INTO ALARM_tbl SET ID = ?, MESSAGE = ?, WDATE = NOW()";
-                    // db.query(sql, [id, msg]);
+        await axios(config).then(function (response) {
+            //알림내역저장
+            if (response.data.success == 1) {
+                for (var targetId of fcmArr) {
+                    const sql = "INSERT INTO PUSH_HISTORY_tbl SET target_id = ?, message = ?, created = NOW()";
+                    db.query(sql, [targetId, fields.data.body]);
                 }
-                //
-                resolve(response.data);
-            }).catch(function (error) {
-                resolve(error);
-            });
-        }).then(function(data) {
-            result = data;
+            }
+            //
+            result = response.data;
+        }).catch(function (error) {
+            result = error;
         });
+
+        // console.log('result', result);
+
         return result;
     }
 
     //null 값은 빈값으로 처리해준다!!
-    nvl(arr) {
+    async nvl(arr) {
+        if (arr == null) {
+            return arr;
+        }
+
         if (arr.length != null) {
             for (var rows of arr) {
                 for (var i in rows) {

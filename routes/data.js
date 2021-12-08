@@ -79,7 +79,7 @@ async function getDataFast(baby_idx) {
             }
         });
     }).then(async function(data) {
-        var tmpArr = utils.nvl(data);
+        var tmpArr = await utils.nvl(data);
         for (var rows of tmpArr) {
             for (var i in rows) {
                 if (rows[i] == '') {
@@ -120,8 +120,8 @@ async function getDataFast(baby_idx) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        arr.body = utils.nvl(data);
+    }).then(async function(data) {
+        arr.body = await utils.nvl(data);
     });
 
     return arr;
@@ -142,8 +142,8 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        tmpArr = utils.nvl(data);
+    }).then(async function(data) {
+        tmpArr = await utils.nvl(data);
     });
 
     var arr = {};
@@ -189,7 +189,7 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
             }
         });
     }).then(async function(data) {
-        var tmpArr = utils.nvl(data);
+        var tmpArr = await utils.nvl(data);
         for (var rows of tmpArr) {
             for (var i in rows) {
                 if (rows[i] == '') {
@@ -229,8 +229,8 @@ router.get('/get_data/:baby_idx', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        arr.body = utils.nvl(data);
+    }).then(async function(data) {
+        arr.body = await utils.nvl(data);
     });
 
     res.send(arr);
@@ -276,7 +276,7 @@ router.get('/get_data_last_one/:baby_idx', setLog, async function(req, res, next
             }
         });
     }).then(async function(data) {
-        obj = utils.nvl(data);
+        obj = await utils.nvl(data);
 
         //수면시간 가져오기!!
         obj.sleep_cnt = await utils.getSleepCount(baby_idx, obj.sdate, obj.edate);
@@ -297,8 +297,8 @@ router.get('/get_data_detail/:idx', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        arr = utils.nvl(data);
+    }).then(async function(data) {
+        arr = await utils.nvl(data);
     });
     res.send(arr);
 });
@@ -317,8 +317,8 @@ router.get('/get_time_line/:baby_idx/:gbn/:start/:end', setLog, async function(r
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        arr.header = utils.nvl(data);
+    }).then(async function(data) {
+        arr.header = await utils.nvl(data);
     });
 
     await new Promise(function(resolve, reject) {
@@ -347,8 +347,8 @@ router.get('/get_time_line/:baby_idx/:gbn/:start/:end', setLog, async function(r
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        arr.body = utils.nvl(data);
+    }).then(async function(data) {
+        arr.body = await utils.nvl(data);
     });
 
     res.send(arr);
@@ -368,8 +368,8 @@ router.get('/get_health/:baby_idx', setLog, async function(req, res, next) {
                 console.log(err);
             }
         });
-    }).then(function(data) {
-        arr.header = utils.nvl(data);
+    }).then(async function(data) {
+        arr.header = await utils.nvl(data);
     });
 
     await new Promise(function(resolve, reject) {
@@ -384,8 +384,8 @@ router.get('/get_health/:baby_idx', setLog, async function(req, res, next) {
                 return;
             }
         });
-    }).then(function(data) {
-        arr.body = utils.nvl(data);
+    }).then(async function(data) {
+        arr.body = await utils.nvl(data);
     });
     res.send(arr);
 });

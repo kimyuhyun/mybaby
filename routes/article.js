@@ -254,7 +254,7 @@ router.get('/reply/:idx/:id/:is_like1_sort', setLog, async function(req, res, ne
             }
         });
     }
-    res.send(utils.nvl(arr));
+    res.send(await utils.nvl(arr));
 });
 
 router.get('/re_reply/:idx/:id', setLog, async function(req, res, next) {
@@ -461,8 +461,8 @@ router.get('/growth_list', setLog, async function(req, res, next) {
                 resolve(err);
             }
         });
-    }).then(function(data) {
-        arr = utils.nvl(data);
+    }).then(async function(data) {
+        arr = await utils.nvl(data);
     });
     res.send(arr);
 });
@@ -495,7 +495,7 @@ router.get('/growth_gallery', setLog, async function(req, res, next) {
             AND id = ?
             AND baby_idx = ?
             ORDER BY created DESC
-            
+
         `;
         db.query(sql, [pid, baby_idx], function(err, rows, fields) {
             if (!err) {
