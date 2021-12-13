@@ -50,49 +50,55 @@ router.get('/list', setLog, async function(req, res, next) {
     const board_id = req.query.board_id;
     const id = req.query.id;
     const lang = req.query.lang;
+    const me_only = req.query.me_only;
 
     var page = req.query.page;
     page = page * 20;
 
     var arr = [];
+    arr.push(id);
     arr.push(lang);
     arr.push(board_id);
 
     await new Promise(function(resolve, reject) {
         var sql = `
-            SELECT
-            A.idx,
-            A.board_id,
-            A.id,
-            A.title,
-            A.memo,
-            A.name1,
-            A.filename0,
-            A.filename1,
-            A.filename2,
-            A.filename3,
-            A.filename4,
-            A.filename5,
-            A.filename6,
-            A.filename7,
-            A.filename8,
-            A.filename9,
-            A.created,
-            A.comment,
-            (SELECT COUNT(*) FROM BOARD_tbl WHERE parent_idx = A.idx AND step = 2) as reply_cnt,
-            (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx) as like1,
-            (SELECT COUNT(*) FROM BOARD_SEE_tbl WHERE board_idx = A.idx) as see,
-            (SELECT filename0 FROM MEMB_tbl WHERE id = A.id) as user_thumb
-            FROM
-            BOARD_tbl as A
-            WHERE step = 1
-            AND is_use = 1
-            AND lang = ?
-            AND board_id = ? `;
-        if (id != '') {
-            sql += ` AND id = ? `;
-            arr.push(id);
+            SELECT * FROM (
+                SELECT
+                A.idx,
+                A.board_id,
+                A.id,
+                A.title,
+                A.memo,
+                A.name1,
+                A.filename0,
+                A.filename1,
+                A.filename2,
+                A.filename3,
+                A.filename4,
+                A.filename5,
+                A.filename6,
+                A.filename7,
+                A.filename8,
+                A.filename9,
+                A.created,
+                A.comment,
+                (SELECT COUNT(*) FROM BOARD_tbl WHERE parent_idx = A.idx AND step = 2) as reply_cnt,
+                (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx) as like1,
+                (SELECT COUNT(*) FROM BOARD_SEE_tbl WHERE board_idx = A.idx) as see,
+                (SELECT count(*) FROM BOARD_BLOCK_tbl WHERE board_idx = A.idx AND id = ?) as block_cnt,
+                (SELECT filename0 FROM MEMB_tbl WHERE id = A.id) as user_thumb
+                FROM
+                BOARD_tbl as A
+                WHERE step = 1
+                AND is_use = 1
+                AND lang = ?
+                AND board_id = ? `;
+        if (me_only == 1) {
+            sql += ` AND id = '${id}' `
         }
+
+        sql += `) as Z `
+        sql += `WHERE block_cnt = 0 `;
 
         sql += ` ORDER BY idx DESC `;
         sql += ` LIMIT ${page}, 20 `;
@@ -410,6 +416,7 @@ router.get('/set_like1/:idx/:id', setLog, async function(req, res, next) {
 
 
 router.get('/growth_list', setLog, async function(req, res, next) {
+    const id = req.query.id;
     const pid = req.query.pid;
     const baby_idx = req.query.baby_idx;
     var page = req.query.page;
@@ -420,40 +427,44 @@ router.get('/growth_list', setLog, async function(req, res, next) {
 
     await new Promise(function(resolve, reject) {
         var sql = `
-            SELECT
-            A.idx,
-            A.board_id,
-            A.id,
-            A.title,
-            A.memo,
-            A.name1,
-            A.filename0,
-            A.filename1,
-            A.filename2,
-            A.filename3,
-            A.filename4,
-            A.filename5,
-            A.filename6,
-            A.filename7,
-            A.filename8,
-            A.filename9,
-            A.created,
-            A.comment,
-            (SELECT COUNT(*) FROM BOARD_tbl WHERE parent_idx = A.idx AND step = 2) as reply_cnt,
-            (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx) as like1,
-            (SELECT COUNT(*) FROM BOARD_SEE_tbl WHERE board_idx = A.idx) as see,
-            (SELECT filename0 FROM MEMB_tbl WHERE id = A.id) as user_thumb
-            FROM
-            BOARD_tbl as A
-            WHERE step = 1
-            AND board_id = 'growth'
-            AND id = ?
-            AND baby_idx = ?
-            ORDER BY idx DESC
-            LIMIT ${page}, 20
+            SELECT * FROM (
+                SELECT
+                A.idx,
+                A.board_id,
+                A.id,
+                A.title,
+                A.memo,
+                A.name1,
+                A.filename0,
+                A.filename1,
+                A.filename2,
+                A.filename3,
+                A.filename4,
+                A.filename5,
+                A.filename6,
+                A.filename7,
+                A.filename8,
+                A.filename9,
+                A.created,
+                A.comment,
+                (SELECT count(*) FROM BOARD_BLOCK_tbl WHERE board_idx = A.idx AND id = ?) as block_cnt,
+                (SELECT COUNT(*) FROM BOARD_tbl WHERE parent_idx = A.idx AND step = 2) as reply_cnt,
+                (SELECT COUNT(*) FROM BOARD_LIKE_tbl WHERE board_idx = A.idx) as like1,
+                (SELECT COUNT(*) FROM BOARD_SEE_tbl WHERE board_idx = A.idx) as see,
+                (SELECT filename0 FROM MEMB_tbl WHERE id = A.id) as user_thumb
+                FROM
+                BOARD_tbl as A
+                WHERE step = 1
+                AND board_id = 'growth'
+                AND id = ?
+                AND baby_idx = ?
+            ) as Z
+            WHERE block_cnt = 0
         `;
+        sql += ` ORDER BY idx DESC `;
+        sql += ` LIMIT ${page}, 20 `;
 
-        db.query(sql, [pid, baby_idx], function(err, rows, fields) {
+        db.query(sql, [id, pid, baby_idx], function(err, rows, fields) {
             // console.log(rows);
             if (!err) {
                 resolve(rows);
@@ -468,6 +479,7 @@ router.get('/growth_list', setLog, async function(req, res, next) {
 });
 
 router.get('/growth_gallery', setLog, async function(req, res, next) {
+    const id = req.query.id;
     const pid = req.query.pid;
     const baby_idx = req.query.baby_idx;
     var page = req.query.page;
@@ -477,27 +489,32 @@ router.get('/growth_gallery', setLog, async function(req, res, next) {
     var arr = [];
 
     await new Promise(function(resolve, reject) {
-        const sql = `
-            SELECT
-            filename0,
-            filename1,
-            filename2,
-            filename3,
-            filename4,
-            filename5,
-            filename6,
-            filename7,
-            filename8,
-            filename9
-            FROM BOARD_tbl
-            WHERE board_id = 'growth'
-            AND step = 1
-            AND id = ?
-            AND baby_idx = ?
-            ORDER BY created DESC
-
+        var sql = `
+            SELECT * FROM (
+                SELECT
+                filename0,
+                filename1,
+                filename2,
+                filename3,
+                filename4,
+                filename5,
+                filename6,
+                filename7,
+                filename8,
+                filename9,
+                created,
+                (SELECT count(*) FROM BOARD_BLOCK_tbl WHERE board_idx = A.idx AND id = ?) as block_cnt
+                FROM BOARD_tbl as A
+                WHERE board_id = 'growth'
+                AND step = 1
+                AND id = ?
+                AND baby_idx = ?
+            ) as Z
+            WHERE block_cnt = 0
         `;
-        db.query(sql, [pid, baby_idx], function(err, rows, fields) {
+        sql += ` ORDER BY created DESC `;
+
+        db.query(sql, [id, pid, baby_idx], function(err, rows, fields) {
             if (!err) {
                 resolve(rows);
             } else {

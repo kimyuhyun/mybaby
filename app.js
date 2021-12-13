@@ -34,7 +34,7 @@ app.use(session({
     saveUninitialized: true,
     store: new MySQLStore(db.connAccount),
     cookie: {
-        maxAge: 24000 * 60 * 60 // 쿠키 유효기간 24시간
+        maxAge: 1000 * 60 * 60 // 쿠키 유효기간 1시간
     }
 }));
 
