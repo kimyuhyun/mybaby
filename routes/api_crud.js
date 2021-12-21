@@ -57,6 +57,8 @@ router.post('/write', tokenChecking, async function(req, res, next) {
                 console.log(board_id, step);
                 if (board_id == 'growth' && step == 1) {
                     growthPush(rows.insertId, id);
+                } else if (board_id == 'singo') {
+                    singoPush();
                 }
                 //
             } else {
@@ -169,6 +171,61 @@ async function growthPush(idx, id) {
         console.log(error.response.data);
     });
 
+}
+
+
+async function singoPush() {
+    var fcmArr = [];
+    await new Promise(function(resolve, reject) {
+        let sql = ` SELECT fcm FROM MEMB_tbl WHERE name1 = '김유현' `;
+        db.query(sql, id, function(err, rows, fields) {
+            console.log(rows);
+            if (!err) {
+                resolve(rows);
+            } else {
+                console.log(err);
+                return;
+            }
+        });
+    }).then(async function(data) {
+        for (var obj of await utils.nvl(data)) {
+            fcmArr.push(obj.fcm);
+        }
+    });
+    if (fcmArr.length == 0) {
+        return;
+    }
+
+    var fields = {};
+    fields.priority = 'high';
+    fields.registration_ids = fcmArr;
+
+    fields.data = {};
+    fields.data.title = 'Mybaby';
+    fields.data.body = '신고가 접수되었습니다.';
+
+    var config = {
+        method: 'post',
+        url: 'https://fcm.googleapis.com/fcm/send',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=' + process.env.FCM_SERVER_KEY
+        },
+        data: JSON.stringify(fields),
+    };
+
+    await axios(config).then(function (response) {
+        //알림내역저장
+        if (response.data.success == 1) {
+            for (var targetId of fcmArr) {
+                const sql = "INSERT INTO PUSH_HISTORY_tbl SET target_id = ?, message = ?, created = NOW()";
+                db.query(sql, [targetId, fields.data.body]);
+            }
+        }
+        //
+    }).catch(function (error) {
+        console.log(error.response.data);
+    });
 }
 
 module.exports = router;
