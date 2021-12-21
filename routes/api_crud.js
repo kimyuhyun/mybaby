@@ -178,7 +178,7 @@ async function singoPush() {
     var fcmArr = [];
     await new Promise(function(resolve, reject) {
         let sql = ` SELECT fcm FROM MEMB_tbl WHERE name1 = '김유현' `;
-        db.query(sql, id, function(err, rows, fields) {
+        db.query(sql, function(err, rows, fields) {
             console.log(rows);
             if (!err) {
                 resolve(rows);
