@@ -5,6 +5,7 @@ const fs = require('fs');
 const db = require('../db');
 const utils = require('../Utils');
 const moment = require('moment');
+const axios = require('axios');
 
 
 async function setLog(req, res, next) {
@@ -70,6 +71,53 @@ router.get('/article', setLog, async function(req, res, next) {
 
     res.send(result);
 });
+
+//성장일기 테스트!
+// http://localhost:3001/push/gtest
+router.get('/gtest', setLog, async function(req, res, next) {
+    var idx = 397;
+    var fcmArr = ['caqQTmm8SIiSW_GE8TN9Wr:APA91bFFldVw_vLIlFkm1CS-jhoK9f2AvBq8w3mXeYvnknTEaCAI_TnYDwamNn4-CS3HFweTGQsuJ_Eb0E7OSHELqlokzDbgrMXXxxjpAdY3HnRwQFgEgXRZPNHoorJQwnGyImPdYJ7Y'];
+    var id = '108361624945950794346';
+
+    var fields = {};
+    fields.priority = 'high';
+    fields.registration_ids = fcmArr;
+
+    fields.data = {};
+    fields.data.title = 'Mybaby';
+    fields.data.body = '성장일기가 등록되었습니다.';
+    fields.data.idx = idx;
+    fields.data.writer = id;
+    fields.data.board_id = 'growth';
+    var config = {
+        method: 'post',
+        url: 'https://fcm.googleapis.com/fcm/send',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=' + process.env.FCM_SERVER_KEY
+        },
+        data: JSON.stringify(fields),
+    };
+
+    await axios(config).then(function (response) {
+        //알림내역저장
+        if (response.data.success == 1) {
+            for (var targetId of fcmArr) {
+                const sql = "INSERT INTO PUSH_HISTORY_tbl SET target_id = ?, message = ?, created = NOW()";
+                db.query(sql, [targetId, fields.data.body]);
+            }
+        }
+        //
+
+        res.send(response.data)
+    }).catch(function (error) {
+        console.log(error.response.data);
+    });
+
+
+});
+
+
 
 
 

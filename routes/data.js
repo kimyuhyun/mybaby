@@ -278,6 +278,19 @@ router.get('/get_data_last_one/:baby_idx', setLog, async function(req, res, next
     }).then(async function(data) {
         obj = await utils.nvl(data);
 
+        //ml 공백 -> 0처리
+        if (obj.pmilk_ml == '') {
+            obj.pmilk_ml = 0;
+        }
+
+        if (obj.bmilk_ml == '') {
+            obj.bmilk_ml = 0;
+        }
+
+        if (obj.milk_ml == '') {
+            obj.milk_ml = 0;
+        }
+
         //수면시간 가져오기!!
         obj.sleep_cnt = await utils.getSleepCount(baby_idx, obj.sdate, obj.edate);
     });
